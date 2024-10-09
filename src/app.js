@@ -47,11 +47,7 @@ app.use(cors());
 app.use(express.json());
 
 // Defining routes for the API
-app.use('/api', (req,res)=>{
-
-  res.send("hello world")
-
-}); // Mounting the routes under '/api'
+app.use('/api', routes); // Mounting the routes under '/api'
 
 // Exporting the app for use in other files (e.g., for starting the server)
 module.exports = app;
