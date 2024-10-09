@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Form with Stepper</title>
+    <style>
+        body {
+            font-family: 'Verdana', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+        }
+
+        .sidebar {
+            width: 30%;
+            border-right: 1px solid #ccc;
+            padding: 20px;
+            background: #f8f8f8;
+        }
+
+        .sidebar h3 {
+            text-align: center;
+        }
+
+        .sidebar .step-item {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: #e9ecef;
+            text-align: center;
+        }
+
+        .sidebar .step-item.active {
+            background: #5cb85c;
+            color: white;
+        }
+
+        .main-content {
+            width: 70%;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="email"],
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #4cae4c;
+        }
+
+        .alert {
+            color: red;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h3>Steps</h3>
+            <div class="step-item active">Enter Email</div>
+            <div class="step-item">Verify Code</div>
+            <div class="step-item">Complete Registration</div>
+        </div>
+
+        <div class="main-content">
+            <h2>Registration</h2>
+            <div class="step active" id="step1">
+                <h3>Step 1: Enter Email</h3>
+                <form id="emailForm">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                    <div class="alert" id="emailError" style="display: none;"></div>
+                    <button type="submit">Send Verification Code</button>
+                </form>
+            </div>
+
+            <div class="step" id="step2">
+                <h3>Step 2: Verify Code</h3>
+                <form id="verificationForm">
+                    <label for="verificationCode">Verification Code:</label>
+                    <input type="text" id="verificationCode" name="verificationCode" required>
+                    <div class="alert" id="verificationError" style="display: none;"></div>
+                    <button type="submit">Verify Code</button>
+                </form>
+            </div>
+
+            <div class="step" id="step3">
+                <h3>Step 3: Complete Registration</h3>
+                <form id="registrationForm">
+                    <label for="first_name">First Name:</label>
+                    <input type="text" id="first_name" name="first_name" required>
+                    <label for="last_name">Last Name:</label>
+                    <input type="text" id="last_name" name="last_name" required>
+                    <label for="phone_number">Phone Number:</label>
+                    <input type="text" id="phone_number" name="phone_number" required>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                    <div class="alert" id="registrationError" style="display: none;"></div>
+                    <button type="submit">Register</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const steps = document.querySelectorAll('.step');
+        const stepItems = document.querySelectorAll('.step-item');
+        let currentStep = 0;
+
+        const showStep = (index) => {
+            steps.forEach((step, i) => {
+                step.classList.toggle('active', i === index);
+            });
+            stepItems.forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+        };
+
+        document.getElementById('emailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const emailError = document.getElementById('emailError');
+
+            const response = await fetch('http://localhost:3000/api/auth/request-verification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert('Verification code has been sent to your email.');
+                currentStep++;
+                showStep(currentStep);
+            } else {
+                emailError.textContent = data.message || 'Error sending verification code';
+                emailError.style.display = 'block';
+            }
+        });
+
+        document.getElementById('verificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const verificationCode = document.getElementById('verificationCode').value;
+            const verificationError = document.getElementById('verificationError');
+
+            const response = await fetch('http://localhost:3000/api/auth/verify-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: document.getElementById('email').value, code: verificationCode }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert('Verification code successful. You can now complete your registration.');
+                currentStep++;
+                showStep(currentStep);
+            } else {
+                verificationError.textContent = data.message || 'Error verifying code';
+                verificationError.style.display = 'block';
+            }
+        });
+
+        document.getElementById('registrationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const firstName = document.getElementById('first_name').value;
+            const lastName = document.getElementById('last_name').value;
+            const email = document.getElementById('email').value;
+            const phoneNumber = document.getElementById('phone_number').value;
+            const password = document.getElementById('password').value;
+            const registrationError = document.getElementById('registrationError');
+
+            const response = await fetch('http://localhost:3000/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'user-type':'seller'
+                },
+                body: JSON.stringify({ first_name: firstName, last_name: lastName, email, phone_number: phoneNumber, password }),
+            });
+
+            const data = await response.json();
+            console.log(data)
+            if (response.ok) {
+                alert('Registration successful!');
+            } else {
+                registrationError.textContent = data.errors.join(', ') || 'Error registering';
+                registrationError.style.display = 'block';
+            }
+        });
+
+        showStep(currentStep);
+    </script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification Stepper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #6a0dad;
+        }
+        .step {
+            display: none;
+        }
+        .step.active {
+            display: block;
+        }
+        .step-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .btn {
+            background-color: #6a0dad;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+            margin: 0 5px;
+            transition: background-color 0.3s;
+        }
+        .btn:disabled {
+            background-color: #ccc;
+        }
+        .btn:hover:not(:disabled) {
+            background-color: #4b0082;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .indicator {
+            padding: 10px;
+            border-radius: 50%;
+            background-color: #6a0dad;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            width: 30px;
+            height: 30px;
+        }
+        .indicator.completed {
+            background-color: #4b0082;
+        }
+        input[type="email"],
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="email"]:invalid,
+        input[type="text"]:invalid {
+            border-color: red;
+        }
+        input:focus {
+            outline: none;
+            border-color: #6a0dad;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Stepper for Email Verification</h2>
+        <div class="step-indicator">
+            <div class="indicator" id="step1-indicator">1</div>
+            <div class="indicator" id="step2-indicator">2</div>
+            <div class="indicator" id="step3-indicator">3</div>
+            <div class="indicator" id="step4-indicator">4</div>
+        </div>
+
+        <div id="step1" class="step active">
+            <h3>Step 1: Request Verification Code for Old Email</h3>
+            <input type="email" id="oldEmail" placeholder="Enter your old email" required>
+            <button class="btn" id="requestOldEmailBtn">Request Verification Code</button>
+        </div>
+
+        <div id="step2" class="step">
+            <h3>Step 2: Verify Old Email Code</h3>
+            <input type="text" id="oldEmailCode" placeholder="Enter the verification code" required>
+            <button class="btn" id="verifyOldEmailBtn">Verify Code</button>
+        </div>
+
+        <div id="step3" class="step">
+            <h3>Step 3: Request Verification Code for New Email</h3>
+            <input type="email" id="newEmail" placeholder="Enter your new email" required>
+            <button class="btn" id="requestNewEmailBtn">Request New Verification Code</button>
+        </div>
+
+        <div id="step4" class="step">
+            <h3>Step 4: Verify New Email Code</h3>
+            <input type="text" id="newEmailCode" placeholder="Enter the new verification code" required>
+            <button class="btn" id="changeEmailBtn">Change Email</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        let accessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2ZjFmOTdmMDJiMDNmY2E3NDRhY2QwZSIsInJvbGVzIjpbInNlbGxlciIsImJ1eWVyIl0sImlhdCI6MTcyNzEzNzc5MiwiZXhwIjoxNzI4MDAxNzkyfQ.Na08eSgrFxeMi4bmy8OO3j8_H-WpOJJpPGfcemnPy-M'
+
+        let oldEmail
+        const steps = document.querySelectorAll('.step');
+        const oldEmailInput = document.getElementById('oldEmail');
+        const oldEmailCodeInput = document.getElementById('oldEmailCode');
+        const newEmailInput = document.getElementById('newEmail');
+        const newEmailCodeInput = document.getElementById('newEmailCode');
+
+        const showStep = (stepIndex) => {
+            steps.forEach((step, index) => {
+                step.classList.toggle('active', index === stepIndex);
+            });
+            updateIndicators(stepIndex);
+        };
+
+        const updateIndicators = (stepIndex) => {
+            for (let i = 0; i < steps.length; i++) {
+                const indicator = document.getElementById(`step${i + 1}-indicator`);
+                indicator.classList.toggle('completed', i < stepIndex);
+            }
+        };
+
+        document.getElementById('requestOldEmailBtn').addEventListener('click', async () => {
+            const oldEmail = oldEmailInput.value;
+            if (!oldEmail) {
+                alert("لطفا ایمیل قدیمی را وارد کنید.");
+                return;
+            }
+            const response = await fetch('http://localhost:3000/api/auth/request-verification-old-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json',
+                "Authorization": `Bearer ${accessToken}`, // جایگذاری درست توکن
+                },
+                body: JSON.stringify({ oldEmail }),
+            });
+            const data = await response.json();
+            alert(data.message);
+            if (data.status === 'success') {
+                currentStep++;
+                showStep(currentStep);
+            }
+        });
+
+        document.getElementById('verifyOldEmailBtn').addEventListener('click', async () => {
+            const oldEmail = oldEmailInput.value;
+            const code = oldEmailCodeInput.value;
+            if (!code) {
+                alert("لطفا کد تأیید را وارد کنید.");
+                return;
+            }
+            const response = await fetch('http://localhost:3000/api/auth/verify-old-email-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json',"Authorization": `Bearer ${accessToken}` },
+                body: JSON.stringify({ oldEmail, code }),
+            });
+            const data = await response.json();
+            alert(data.message);
+            if (data.status === 'success') {
+                currentStep++;
+                showStep(currentStep);
+            }
+        });
+
+        document.getElementById('requestNewEmailBtn').addEventListener('click', async () => {
+            const newEmail = newEmailInput.value;
+            if (!newEmail) {
+                alert("لطفا ایمیل جدید را وارد کنید.");
+                return;
+            }
+            const response = await fetch('http://localhost:3000/api/auth/request-verification-new-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json',"Authorization": `Bearer ${accessToken}` },
+                body: JSON.stringify({ newEmail }),
+            });
+            const data = await response.json();
+            alert(data.message);
+            if (data.status === 'success') {
+                currentStep++;
+                showStep(currentStep);
+            }
+        });
+
+        document.getElementById('changeEmailBtn').addEventListener('click', async () => {
+            const oldEmail = oldEmailInput.value;
+            const newEmail = newEmailInput.value;
+            const code = newEmailCodeInput.value;
+            if (!code) {
+                alert("لطفا کد تأیید جدید را وارد کنید.");
+                return;
+            }
+            const response = await fetch('http://localhost:3000/api/auth/change-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' ,"Authorization": `Bearer ${accessToken}`},
+                body: JSON.stringify({ newEmail,oldEmail, code }),
+            });
+            const data = await response.json();
+            alert(data.message);
+            if (data.status === 'success') {
+                alert("ایمیل با موفقیت تغییر کرد.");
+            }
+        });
+    </script>
+</body>
+</html>

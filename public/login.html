@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Login Form</title>
+ <style>
+    * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f7f9fc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.login-form {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.input-field {
+  margin-bottom: 1.5rem;
+}
+
+.input-field label {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.input-field input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.input-field input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  width: calc(100% - 30px);
+  padding-right: 30px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+
+.signup-link {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.signup-link a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}
+
+
+ </style>
+</head>
+<body>
+  <div class="container">
+    <form class="login-form" id="loginForm">
+      <h2>Login</h2>
+      <div class="input-field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+      </div>
+      <div class="input-field">
+        <label for="password">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          <span class="toggle-password" onclick="togglePassword()">👁️</span>
+        </div>
+      </div>
+      <div class="input-field">
+        <button type="submit" class="btn">Login</button>
+      </div>
+      <p class="signup-link">Don't have an account? <a href="#">Sign up</a></p>
+      <p id="error-message" class="error-message"></p> <!-- Error message container -->
+    </form>
+
+    <button id="hi">hiiiiiiiiiiiiii</button>
+  </div>
+
+  <script >
+    let accessToken
+    // Toggle password visibility
+function togglePassword() {
+  const passwordInput = document.getElementById("password");
+  const toggleIcon = document.querySelector(".toggle-password");
+
+  if (passwordInput.type === "password") {
+    passwordInput.type = "text";
+    toggleIcon.textContent = "🙈"; // Change icon when password is visible
+  } else {
+    passwordInput.type = "password";
+    toggleIcon.textContent = "👁️"; // Change icon when password is hidden
+  }
+}
+
+// Form submission logic for login
+document.getElementById("loginForm").addEventListener("submit", async function(event) {
+  event.preventDefault(); // Prevent form from submitting the default way
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const errorMessage = document.getElementById("error-message");
+
+  // Clear any previous error messages
+  errorMessage.textContent = "";
+
+  try {
+    const response = await fetch("http://localhost:3000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NmVmNmI2NDg1YWRkMDg3OGRjZDE3MjgiLCJyb2xlcyI6W10sImlhdCI6MTcyNjk3NzIzOCwiZXhwIjoxNzI2OTc4MTM4fQ.BTux5bPBECvJzdL0JFVnlAKZKAAndmLniggcRfo8ifY"
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    // console.log(response)
+    if (!response.ok) {
+      const errorData = await response.json();
+      // console.log(errorData)
+      throw new Error(errorData.message)
+      // Handle success (e.g., redirect to dashboard)
+    } else{
+      const data = await response.json();
+      console.log(data)
+      accessToken = data.accessToken
+      // Handle success (e.g., redirect to dashboard)
+    }
+  } catch (error) {
+    // Handle network or other errors
+    errorMessage.textContent = error.message;
+  }
+
+ 
+});
+
+document.getElementById("hi").addEventListener("click", async () => {
+  try {
+    // console.log(accessToken)
+    const response = await fetch("http://localhost:3000/api/users/info", {
+      method: 'GET',
+      headers: {
+        "Content-Type": "application/json",
+        "authorization": `Bearer ${accessToken}`, // جایگذاری درست توکن
+      },
+  
+    });
+
+    // بررسی موفقیت‌آمیز بودن پاسخ
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.log(errorData)
+      throw new Error(errorData.message);
+    }
+
+    const data = await response.json();
+    if(data.data.newAccessToken){
+      accessToken = data.data.newAccessToken
+      console.log(data.data.newAccessToken)
+    }
+    console.log("data", data);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+  </script>
+</body>
+</html>
