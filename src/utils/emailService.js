@@ -41,6 +41,7 @@ const sendVerificationEmail = async (email, type) => {
         case 'delete-website': return emailHTML(code); 
         case 'website-transfer': return emailHTML(code); 
         case 'add-support': return emailHTML(code); 
+        case 'Unauthorized-entry': return emailHTML(code); 
         default: return emailHTML(code); // Default template
       }
     };

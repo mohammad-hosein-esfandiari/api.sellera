@@ -69,6 +69,7 @@ exports.createWebsite = async (req, res) => {
       bio: website.bio,
       isOnline: website.isOnline,
       createdAt: website.createdAt,
+      seo:website.seo
     };
 
     return res.status(200).send(
@@ -81,7 +82,6 @@ exports.createWebsite = async (req, res) => {
     );
   }
 };
-
 
 //  API for change domain name
 exports.updateDomainName = async (req, res) => {
@@ -135,11 +135,6 @@ exports.updateDomainName = async (req, res) => {
   }
 };
 
-
-
-
-
-
 // API for sending delete request to email
 exports.requestDeleteWebsite = async (req, res) => {
   try {
@@ -176,8 +171,6 @@ exports.requestDeleteWebsite = async (req, res) => {
     );
   }
 };
-
-
 
 // API for confirming website deletion
 exports.confirmDeleteWebsite = async (req, res) => {
@@ -247,11 +240,6 @@ exports.confirmDeleteWebsite = async (req, res) => {
   }
 };
 
-
-
-
-
-
 exports.requestWebsiteTransfer = async (req, res) => {
   try {
 
@@ -270,11 +258,10 @@ exports.requestWebsiteTransfer = async (req, res) => {
   }
 };
 
-
 // API to confirm the transfer and change seller_id
 exports.confirmWebsiteTransfer = async (req, res) => {
   try {
-    const {  code, newEmail } = req.body; // Domain name, verification code, and new seller's email
+    const {  code, newEmail,domain_name } = req.body; // Domain name, verification code, and new seller's email
 
        // Find the new seller by email
        const newSeller = await User.findOne({ email: newEmail });
@@ -292,6 +279,7 @@ exports.confirmWebsiteTransfer = async (req, res) => {
      }
  
  
+     const website = await Website.findOne({ domain_name});
 
     // Update the seller_id in the website document
     website.seller_id = newSeller._id;
@@ -316,8 +304,14 @@ exports.changeWebsiteStatus = async (req,res)=>{
       return res.status(404).json(createResponse("Website not found.", "error", 404
       ));
       }
+
+      
       // Update the website status
-      website.isOnline ? website.isOnline = false : website.isOnline = true
+      if(website.isOnline){
+        website.isOnline = false
+      }else{
+        website.isOnline = true
+      }
       await website.save();
       
 
@@ -402,8 +396,6 @@ exports.updateBio = async (req, res) => {
   }
 };
 
-
-
 // Controller to handle request for adding support
 exports.requestAddSupport = async (req, res) => {
   try {
@@ -450,11 +442,10 @@ exports.requestAddSupport = async (req, res) => {
   }
 };
 
-
 // Controller to handle confirmation of the add support request
 exports.confirmRequestAddSupport = async (req, res) => {
   try {
-    const { code , support_email } = req.body;
+    const { code , support_email ,domain_name} = req.body;
 
     if (!code || !support_email) {
       return res.status(400).json(createResponse('Verification code and supports email are required.', 'error', 400));
@@ -498,13 +489,18 @@ exports.confirmRequestAddSupport = async (req, res) => {
   }
 };
 
-
-
 const validPermissions = ["admin", "product", "order", "comment"];
 
 exports.addSupport = async (req, res) => {
   try {
     const { support_email, permission , domain_name } = req.body;
+    
+    // Find user by email and check if user exists
+    const user = await User.findOne({ email: support_email });
+    if (!user) {
+      return res.status(404).json(createResponse('User not found.', 'error', 404));
+    }
+
 
     // Validate support_email is provided
     if (!support_email) {
@@ -519,12 +515,6 @@ exports.addSupport = async (req, res) => {
     // Validate permission is one of the allowed values
     if (!permission || !validPermissions.includes(permission)) {
       return res.status(400).json(createResponse('Invalid permission.', 'error', 400));
-    }
-
-    // Find user by email and check if user exists
-    const user = await User.findOne({ email: support_email });
-    if (!user) {
-      return res.status(404).json(createResponse('User not found.', 'error', 404));
     }
 
         // Check if user already has the support role in website
@@ -577,9 +567,6 @@ exports.addSupport = async (req, res) => {
     return res.status(500).json(createResponse('Error adding support, Try Again.', 'error', 500));
   }
 };
-
-
-
 
 
 exports.addSupportPermission = async (req, res) => {
@@ -645,8 +632,6 @@ exports.addSupportPermission = async (req, res) => {
     return res.status(500).json(createResponse('Error adding permission, try again.', 'error', 500));
   }
 };
-
-
 
 
 exports.removeSupportPermission = async (req, res) => {

@@ -6,6 +6,7 @@ const Session = require("../../models/Session");
 const { createToken, createRefreshToken } = require("../../utils/jwtTokenFunc");
 const VerificationCode = require("../../models/VerificationCode");
 const createResponse = require("../../utils/createResponse");
+const { sendVerificationEmail } = require("../../utils/emailService");
 require("dotenv").config();
 
 // Login function
@@ -26,7 +27,7 @@ const login = async (req, res) => {
     // Check if the account is locked
     if (user.lockUntil && user.lockUntil > Date.now()) {
       const lockDuration = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));  // Remaining lock time in minutes
-      return res.status(403).json(createResponse(`Your account is locked. Try again in ${lockDuration} minutes.`, "error", 403));
+      return res.status(403).json(createResponse(`Your account is locked. Try again in ${lockDuration} minutes.`, "error", 408));
     }
 
     // Verify the password
@@ -38,8 +39,13 @@ const login = async (req, res) => {
       // Lock the account if max login attempts are exceeded
       if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
         user.lockUntil = Date.now() + LOCK_TIME;  // Lock the account for 1 hour
+                // Send verification email
+        const result = await sendVerificationEmail(email,"Unauthorized-entry");
+        if (!result.success) {
+          return res.status(400).json(createResponse(result.message,"error", 408));
+        }
         await user.save();
-        return res.status(403).json(createResponse("Too many failed login attempts. Your account is locked for 1 hour.", "error", 403));
+        return res.status(403).json(createResponse("Too many failed login attempts. Your account is locked for 1 hour.", "error", 408));
       }
 
       // Save the user with the updated loginAttempts

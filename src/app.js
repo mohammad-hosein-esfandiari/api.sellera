@@ -1,10 +1,14 @@
 const express = require('express'); 
+const cron = require('node-cron');
 const routes = require('./routes'); 
 const mongoose = require('mongoose'); 
 const cors = require('cors'); 
 const session = require('express-session'); 
 const MongoDBStore = require('connect-mongodb-session')(session); 
 require('dotenv').config(); 
+const { Website } = require('./models/Website');
+const startSubscriptionJob = require('./configs/WebsitePaymentCron');
+
 
 const app = express(); // Creating an instance of an Express application
 
@@ -39,6 +43,9 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers for requests
   credentials: true, // Allow credentials (cookies) to be sent with requests
 };
+
+
+startSubscriptionJob()
 
 // Using CORS middleware with the specified options
 app.use(cors());

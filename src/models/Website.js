@@ -14,6 +14,7 @@ const websiteSchema = new mongoose.Schema({
     seller_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
+        immutable: true,
         required: [true, 'Seller ID is required.'] // Ensure seller ID is provided
     },
     banners: [{
@@ -93,8 +94,68 @@ const websiteSchema = new mongoose.Schema({
             required: [true, 'Change details are required.']
         }
     }],
+    subscription: {
+        price: { type: Number, default: 100000 }, // Monthly subscription fee (100,000 IRR)
+        isActive: { type: Boolean, default: true }, // Whether the subscription is active
+        lastPaymentDate: {
+            type: Date,
+            default: Date.now
+        },
+        nextPaymentDate: {
+            type: Date,
+            default: function() {
+                const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+                return new Date(Date.now() + thirtyDaysInMilliseconds); // Set 30 days after current date
+            }
+        }
+    },
+     // SEO fields
+     seo: {
+        meta_title: {
+            type: String,
+            default: "" // Title for SEO
+        },
+        meta_description: {
+            type: String,
+            default: "" // Meta description for SEO
+        },
+        meta_keywords: {
+            type: [String], // Array of keywords for SEO
+            default: []
+        },
+        canonical_url: {
+            type: String, // Canonical URL for avoiding duplicate content issues
+            default: ""
+        },
+        robots_meta: {
+            type: String, // Meta tag for controlling search engine indexing
+            enum: ["index, follow", "noindex, follow", "index, nofollow", "noindex, nofollow"],
+            default: "index, follow"
+        },
+        schema_markup: {
+            type: String, // Optional field for structured data (e.g., JSON-LD)
+            default: ""
+        }
+    },
     createdAt:{type:Date , default: Date.now()}
 });
+
+websiteSchema.statics.updateExpiredSubscriptions = async function() {
+    const today = new Date();
+
+    // Find all websites where the subscription is active and the nextPaymentDate is in the past
+    const expiredWebsites = await this.updateMany(
+        { 
+            "subscription.isActive": true, 
+            "subscription.nextPaymentDate": { $lt: today }
+        },
+        { 
+            $set: { "subscription.isActive": false }
+        }
+    );
+    
+    return expiredWebsites;
+};
 
 // Create the Website model
 const Website = mongoose.model("Website", websiteSchema);

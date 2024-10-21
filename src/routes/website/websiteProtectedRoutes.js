@@ -5,6 +5,7 @@ const {
   createWebsiteValidation,
 } = require("../../controllers/Website/validations/createWebsiteValidation");
 const isOwnerOfWebsite = require("../../middlewares/isOwnerOfWebsite");
+const { hasPermissions } = require("../../middlewares/hasPermissions");
 const router = express.Router();
 
 router.post(
@@ -51,9 +52,13 @@ router.put(
 
 router.put(
   "/bio",
-  isSeller,
-  isOwnerOfWebsite,
+  hasPermissions(["admin"]),
   WebsiteProtectedController.updateBio
+);
+router.put(
+  "/status",
+  hasPermissions(["admin"]),
+  WebsiteProtectedController.changeWebsiteStatus
 );
 
 router.post(

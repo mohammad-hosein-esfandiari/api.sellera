@@ -8,7 +8,6 @@ const checkTokenAndRoles = (token, systemType, website, returnedData) => {
   return new Promise(async (resolve) => {
     if (token) {
       const authResult = await verifiedToken(token, systemType); // Verify token
-      console.log(authResult)
       // If token is invalid, continue without returning an error
       if (!authResult.success) {
         return resolve(null); // Continue without error, allow further execution
