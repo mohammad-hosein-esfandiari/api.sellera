@@ -1,4 +1,4 @@
-const { validationResult } = require("express-validator");
+const { validationResult, check } = require("express-validator");
 const createResponse = require("../../../utils/createResponse");
 const { Website } = require('../../../models/Website');
 const { sendVerificationEmail } = require("../../../utils/emailService");
@@ -6,6 +6,7 @@ const VerificationCode = require("../../../models/VerificationCode");
 const { User } = require("../../../models/User");
 const verifyCode = require("../../../utils/verifyCode");
 const { isValidEmail } = require("../../../utils/isValidEmail");
+const upload = require("../../../configs/uploadConfig");
 
 // Controller for creating a website
 exports.createWebsite = async (req, res) => {
@@ -819,3 +820,151 @@ exports.deleteUpdateHistory = async (req, res) => {
   }
 };
 
+
+
+// Add category to website
+exports.addCategory = [
+  // Validate the category and domain_name
+  check('category')
+      .isString().withMessage('Category must be a string.')
+      .notEmpty().withMessage('Category cannot be empty.'),
+  
+  check('domain_name')
+      .isString().withMessage('Domain name must be a valid string.')
+      .notEmpty().withMessage('Domain name is required.'),
+
+  // Controller logic for adding a category
+  async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+          return res.status(400).json(createResponse(
+              "Validation failed.",
+              "error",
+              400,
+              { errors: errors.array().map(item => item.msg) }
+          ));
+      }
+
+      try {
+          const { category, domain_name } = req.body;
+
+          // Find the website by domain_name
+          const website = await Website.findOne({ domain_name });
+          if (!website) {
+              return res.status(404).json(createResponse("Website not found.", "error", 404));
+          }
+
+          // Check if the category already exists
+          if (website.categories.includes(category)) {
+              return res.status(400).json(createResponse("Category already exists.", "error", 400));
+          }
+
+          // Add the new category
+          website.categories.push(category);
+          await website.save();
+
+          return res.status(200).json(createResponse(
+              "Category added successfully.",
+              "success",
+              200,
+              { data:{categories: website.categories} }
+          ));
+      } catch (error) {
+          return res.status(500).json(createResponse("Internal server error.", "error", 500));
+      }
+  }
+];
+
+
+
+// Remove category from website
+exports.removeCategory = [
+  // Validate the category and domain_name
+  check('category')
+      .isString().withMessage('Category must be a string.')
+      .notEmpty().withMessage('Category cannot be empty.'),
+
+  check('domain_name')
+      .isString().withMessage('Domain name must be a valid string.')
+      .notEmpty().withMessage('Domain name is required.'),
+
+  // Controller logic for removing a category
+  async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+          return res.status(400).json(createResponse(
+              "Validation failed.",
+              "error",
+              400,
+              { errors: errors.array().map(item => item.msg) }
+          ));
+      }
+
+      try {
+          const { category, domain_name } = req.body;
+
+          // Find the website by domain_name
+          const website = await Website.findOne({ domain_name });
+          if (!website) {
+              return res.status(404).json(createResponse("Website not found.", "error", 404));
+          }
+
+          // Check if the category exists
+          const categoryIndex = website.categories.indexOf(category);
+          if (categoryIndex === -1) {
+              return res.status(400).json(createResponse("Category not found.", "error", 400));
+          }
+
+          // Remove the category
+          website.categories.splice(categoryIndex, 1);
+          await website.save();
+
+          return res.status(200).json(createResponse(
+              "Category removed successfully.",
+              "success",
+              200,
+              { data : {categories: website.categories} }
+          ));
+      } catch (error) {
+          return res.status(500).json(createResponse("Internal server error.", "error", 500));
+      }
+  }
+];
+
+
+
+// API to upload banner image and add banner to website
+exports.addBannerWithImage = [
+  upload.single('image'), // Middleware to handle single file upload
+  async (req, res) => {
+      try {
+          const { domain_name, link } = req.body;
+
+          // Check if the file was uploaded
+          if (!req.file) {
+              return res.status(400).json(createResponse("No image file uploaded.", "error", 400));
+          }
+
+          const imageUrl = `/images/${req.file.filename}`; // The path to access the image
+
+          // Find website by domain_name
+          const website = await Website.findOne({ domain_name });
+          if (!website) {
+              return res.status(404).json(createResponse("Website not found.", "error", 404));
+          }
+
+          // Add new banner to the website's banners array
+          website.banners.push({ image: imageUrl, link });
+          await website.save();
+
+          return res.status(200).json(createResponse(
+              "Banner with image uploaded successfully.",
+              "success",
+              200,
+              { banners: website.banners }
+          ));
+      } catch (error) {
+          return res.status(500).json(createResponse("Internal server error.", "error", 500));
+      }
+  }
+];

@@ -50,16 +50,6 @@ router.put(
   WebsiteProtectedController.confirmWebsiteTransfer
 );
 
-router.put(
-  "/bio",
-  hasPermissions(["admin"]),
-  WebsiteProtectedController.updateBio
-);
-router.put(
-  "/status",
-  hasPermissions(["admin"]),
-  WebsiteProtectedController.changeWebsiteStatus
-);
 
 router.post(
   "/supports/add-request",
@@ -123,6 +113,36 @@ router.delete(
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.deleteUpdateHistory
+);
+
+
+//  admin support api
+
+router.put(
+  "/bio",
+  hasPermissions(["admin"]),
+  WebsiteProtectedController.updateBio
+);
+router.put(
+  "/status",
+  hasPermissions(["admin"]),
+  WebsiteProtectedController.changeWebsiteStatus
+);
+router.post(
+  "/category",
+  hasPermissions(["admin","product"]),
+  WebsiteProtectedController.addCategory
+);
+router.delete(
+  "/category",
+  hasPermissions(["admin","product"]),
+  WebsiteProtectedController.removeCategory
+);
+
+router.post(
+  "/banner",
+  hasPermissions(["admin","product"]),
+  WebsiteProtectedController.addBannerWithImage
 );
 
 module.exports = router;

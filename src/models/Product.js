@@ -44,6 +44,20 @@ const detailsSchema = new mongoose.Schema({
     }]
 });
 
+const ratingSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // Reference to the User model
+        required: true
+    },
+    value: {
+        type: Number,
+        required: true,
+        min: 0,
+        max: 5
+    }
+}, { _id: false });
+
 // Define the main product schema
 const productSchema = new mongoose.Schema({
     website_name: { type: String, ref: "Website" },
@@ -67,10 +81,7 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default:0
     },
-    discountPrice: { 
-        type: Number,
-        default:0
-    },
+
     images: [{ 
         type: String,
         validate: {
@@ -91,20 +102,12 @@ const productSchema = new mongoose.Schema({
         default:""
     },
     details: [{ type: detailsSchema }],
-    rating: [{
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 5
-    }],
-    discountStartDate: {type:Date , default:""},
-    discountEndDate: {type:Date , default:""},
+    rating: [ratingSchema],
     seo: {type:seoSchema , default:{
         metaTitle: "",
         metaDescription: "",
         keywords: []
     }},
-    relatedProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     tags: [{ type: String }],
     specialOffer: {type:specialOfferSchema , default:{
         active: false,

@@ -1,12 +1,11 @@
 const express = require('express'); 
-const cron = require('node-cron');
 const routes = require('./routes'); 
 const mongoose = require('mongoose'); 
 const cors = require('cors'); 
 const session = require('express-session'); 
 const MongoDBStore = require('connect-mongodb-session')(session); 
 require('dotenv').config(); 
-const { Website } = require('./models/Website');
+const path = require('path');
 const startSubscriptionJob = require('./configs/WebsitePaymentCron');
 
 
@@ -44,8 +43,12 @@ const corsOptions = {
   credentials: true, // Allow credentials (cookies) to be sent with requests
 };
 
+// schedule for website payment for everyday (cron)
+// startSubscriptionJob()
 
-startSubscriptionJob()
+// Middleware for images in public folder
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
+
 
 // Using CORS middleware with the specified options
 app.use(cors());

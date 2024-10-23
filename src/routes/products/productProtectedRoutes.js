@@ -6,6 +6,8 @@ const router = express.Router();
 
 
 router.post("/add", ProductProtectedController.addProduct )
+router.put("/:website/:slug/title", ProductProtectedController.updateProductTitle )
+router.put("/:website/:slug/category", ProductProtectedController.updateProductCategory )
 
 
 

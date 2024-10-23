@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Image</title>
+</head>
+<body>
+    <h1>Upload Image</h1>
+ 
+        <label for="image">Choose Image:</label>
+        <input type="file" id="image" name="image" accept="image/*" required><br><br>
+
+
+    <button id="btn" type="button" >Upload Image</button>
+
+    <script>
+        document.getElementById('btn').addEventListener('click', async (event) => {
+            event.preventDefault();
+
+
+            const fileInput = document.getElementById('image');
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]); // فایل تصویر را اضافه کنید
+
+            // ارسال درخواست به سرور
+            try {
+                const response = await fetch('http://localhost:8080/api/upload/image', {
+                    method: 'POST',
+                    body: formData // ارسال FormData
+                });
+
+                // دریافت پاسخ از سرور
+                const data = await response.json();
+                console.log(data)
+
+                if (response.ok) {
+                    alert('Image uploaded successfully: ' + " " + data.data.image_URL);
+                    console.log(data)
+                } else {
+                    // alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                // alert('An error occurred while uploading the image.');
+            }
+        });
+    </script>
+</body>
+</html>
