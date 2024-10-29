@@ -20,8 +20,9 @@ exports.uploadImage = [
       const publicDirectory = path.join(process.cwd(), "public", "images");
 
       // ایجاد لینک تصویر
-      const imageUrl = path.join(publicDirectory, req.file.filename);
+      const imageUrl =  "public/images/" + req.file.filename;
 
+      
       // Return the image URL as part of the response
       return res.status(200).json(
         createResponse(

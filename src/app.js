@@ -5,7 +5,7 @@ const cors = require("cors");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 require("dotenv").config();
-const path = require("path");
+
 const jsonContentMiddleware = require("./middlewares/jsonContentMiddleWare");
 const checkBodySyntax = require("./middlewares/checkBodySyntax");
 
@@ -47,8 +47,7 @@ const corsOptions = {
 // schedule for website payment for everyday (cron)
 // startSubscriptionJob()
 
-// Middleware for images in public folder
-app.use("/images", express.static(path.join(__dirname, "public/images")));
+
 
 // Using CORS middleware with the specified options
 app.use(cors());
@@ -60,7 +59,7 @@ app.use(express.json());
 app.use("/api", routes); // Mounting the routes under '/api'
 
 // check jsonj content
-app.use(jsonContentMiddleware);
+// app.use(jsonContentMiddleware);
 
 // Middleware to catch JSON parsing errors
 app.use(checkBodySyntax);

@@ -87,10 +87,10 @@ exports.updateProductTitle = [
         }
 
         try {
-            const { slug ,website } = req.params;
-            const { title } = req.body;
+            const { slug  } = req.params;
+            const { title , domain_name} = req.body;
 
-            const product = await Product.findOneAndUpdate({slug, website_name:website}, { title }, { new: true });
+            const product = await Product.findOneAndUpdate({slug, website_name:domain_name}, { title }, { new: true });
 
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
@@ -174,7 +174,7 @@ exports.updateProductCategory = [
                 "Product category updated successfully.",
                 "success",
                 200,
-                {data: product }
+                {data: {category: product.category} }
             ));
         } catch (error) {
             // Handle any internal server errors
@@ -219,15 +219,14 @@ exports.updateProductPrice = [
         }
 
         try {
-            const { slug, website } = req.params;
+            const { slug } = req.params;
             const { amount, currency, domain_name } = req.body;
 
-            // Combine amount and currency into a single price string
-            const price = `${amount} ${currency}`;
+
 
             const product = await Product.findOneAndUpdate(
                 { slug, website_name: domain_name },  // Use domain_name from body
-                { price },
+                { price:{amount,currency} },
                 { new: true }
             );
 
@@ -235,9 +234,283 @@ exports.updateProductPrice = [
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
 
-            return res.status(200).json(createResponse("Product price updated successfully.", "success", 200, { data: product }));
+            return res.status(200).json(createResponse("Product price updated successfully.", "success", 200, { data: {price:product.price} }));
         } catch (error) {
             console.error("Error updating product price:", error);
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+
+
+
+
+// Toggle product's online status with validation checks
+exports.toggleProductStatus = [
+    // Validation checks for 'domain_name' and 'slug'
+    check("domain_name").notEmpty().isString().withMessage("Domain name must be a valid string."),
+    check("slug").notEmpty().isString().withMessage("Slug must be a valid string."),
+
+    async (req, res) => {
+        // Check for validation errors in the request
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const formattedErrors = errors.array().reduce((acc, error) => {
+                const { path, msg } = error;
+                if (!acc[path]) {
+                    acc[path] = []; // Initialize an array for this field
+                }
+                acc[path].push(msg); // Add the message to the array
+                return acc;
+            }, {});
+
+            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+        }
+
+        try {
+            const { slug } = req.params;
+            const { domain_name} = req.body
+
+            // Find product by slug and domain_name
+            const product = await Product.findOne({ slug, website_name: domain_name });
+
+            // If product does not exist, return a 404 response
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Check the current status of isOnline
+            if (product.isOnline) {
+                // If product is online, set to offline without further checks
+                product.isOnline = false;
+                await product.save();
+                return res.status(200).json(createResponse("Product is now offline.", "success", 200, { data: product }));
+            } else {
+                // If product is offline, validate conditions for going online
+
+                // Check if the product has at least one banner image
+                if (!product.images || product.images.length === 0) {
+                    return res.status(400).json(createResponse("Product must have at least one banner image to go online.", "error", 400));
+                }
+
+                // Check if the product category is set and not empty
+                if (!product.category || product.category.trim() === "") {
+                    return res.status(400).json(createResponse("Product category is required to go online.", "error", 400));
+                }
+
+                // Set product to online if all conditions are met
+                product.isOnline = true;
+                await product.save();
+                return res.status(200).json(createResponse("Product is now online.", "success", 200, { data: {isOnline:product.isOnline}  }));
+            }
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+// Add a new banner image
+exports.addBanner = [
+    check("domain_name").notEmpty().isString().withMessage("Domain name must be a valid string."),
+
+    check('url')
+        .notEmpty().withMessage('Image URL cannot be empty.')
+        .isString().withMessage('Image URL must be a string.')
+        .matches(/\.(jpg|jpeg|png|webp|gif)$/i).withMessage('Image URL must end with a valid image file format (e.g., jpg, jpeg, png, webp, gif).'),
+    
+    check('alt')
+        .optional() // Alt text is optional
+        .isString().withMessage('Alt text must be a string.')
+        .isLength({ max: 100 }).withMessage('Alt text must be at most 100 characters long.'),
+    
+    async (req, res) => {
+        // Check for validation errors in the request
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const formattedErrors = errors.array().reduce((acc, error) => {
+                const { path, msg } = error;
+                if (!acc[path]) {
+                    acc[path] = []; // Initialize an array for this field
+                }
+                acc[path].push(msg); // Add the message to the array
+                return acc;
+            }, {});
+
+            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+        }
+
+        
+        const { url, alt } = req.body;
+        const { slug } = req.params; // Getting slug from URL parameters
+        const { domain_name } = req.body; // Getting domain_name from request body
+
+        try {
+            const product = await Product.findOneAndUpdate(
+                { slug: slug, website_name: domain_name }, // Using both slug and domain_name to find the product
+                { $push: { images: { url, alt: alt || "" } } }, // Adding new banner image to the array
+                { new: true }
+            );
+
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found..", "error", 404));
+            }
+
+            return res.status(200).json(createResponse("Banner image added successfully.", "success", 200, {data:{images:product.images}}));
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+
+// Delete a banner image by image ID
+exports.deleteBannerById = [
+    check("domain_name").notEmpty().isString().withMessage("Domain name must be a valid string."),
+
+    check('imageId')
+        .notEmpty().withMessage('Image ID cannot be empty.')
+        .isMongoId().withMessage('Invalid Image ID format.'),
+    
+    async (req, res) => {
+             // Check for validation errors in the request
+             const errors = validationResult(req);
+             if (!errors.isEmpty()) {
+                 const formattedErrors = errors.array().reduce((acc, error) => {
+                     const { path, msg } = error;
+                     if (!acc[path]) {
+                         acc[path] = []; // Initialize an array for this field
+                     }
+                     acc[path].push(msg); // Add the message to the array
+                     return acc;
+                 }, {});
+     
+                 return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+             }
+     
+        const { imageId } = req.body; // Getting the ID of the image to be deleted
+        const { slug } = req.params; // Getting slug from URL parameters
+        const { domain_name } = req.body; // Getting domain_name from the request body
+
+        try {
+            const product = await Product.findOneAndUpdate(
+                { slug: slug, website_name: domain_name }, // Using slug and domain_name to find the product
+                { $pull: { images: { _id: imageId } } }, // Removing the banner image by ID
+                { new: true }
+            );
+
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            return res.status(200).json(createResponse("Banner image deleted successfully.", "success", 200, {data:{images:product.images}}));
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+
+// Update a banner image by image ID
+exports.updateBannerById = [
+    check("domain_name").notEmpty().isString().withMessage("Domain name must be a valid string."),
+
+    check('imageId')
+        .notEmpty().withMessage('Image ID cannot be empty.')
+        .isMongoId().withMessage('Invalid Image ID format.'),
+    
+    check('url')
+        .optional() // URL optional for update
+        .isString().withMessage('Image URL must be a string.')
+        .matches(/\.(jpg|jpeg|png|webp|gif)$/i).withMessage('Image URL must end with a valid image file format (e.g., jpg, jpeg, png, webp, gif).'),
+    
+    check('alt')
+        .optional() // Alt text is optional
+        .isString().withMessage('Alt text must be a string.')
+        .isLength({ max: 100 }).withMessage('Alt text must be at most 100 characters long.'),
+    
+    async (req, res) => {
+             // Check for validation errors in the request
+             const errors = validationResult(req);
+             if (!errors.isEmpty()) {
+                 const formattedErrors = errors.array().reduce((acc, error) => {
+                     const { path, msg } = error;
+                     if (!acc[path]) {
+                         acc[path] = []; // Initialize an array for this field
+                     }
+                     acc[path].push(msg); // Add the message to the array
+                     return acc;
+                 }, {});
+     
+                 return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+             }
+
+        const { imageId } = req.body; // Getting the ID of the image to be updated
+        const { slug } = req.params; // Getting slug from URL parameters
+        const { domain_name } = req.body; // Getting domain_name from the request body
+
+        const updateData = {};
+        if (req.body.url) updateData['images.$.url'] = req.body.url; // Update URL if provided
+        if (req.body.alt) updateData['images.$.alt'] = req.body.alt; // Update alt text if provided
+
+        try {
+            const product = await Product.findOneAndUpdate(
+                { slug: slug, website_name: domain_name, 'images._id': imageId }, // Using slug, domain_name, and image ID to find the product
+                { $set: updateData }, // Updating the specified fields
+                { new: true }
+            );
+
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found or image ID does not exist.", "error", 404));
+            }
+
+            return res.status(200).json(createResponse("Banner image updated successfully.", "success", 200, {data:{images:product.images}}));
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+// Update the order of images based on provided IDs
+exports.updateImageOrder = [
+    check("domain_name").notEmpty().isString().withMessage("Domain name must be a valid string."),
+
+    check('imageIds')
+        .isArray().withMessage('Image IDs must be an array.')
+        .notEmpty().withMessage('Image IDs array cannot be empty.'),
+    
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json(createResponse("Validation failed", "error", 400, errors.array()));
+        }
+
+        const { imageIds ,domain_name} = req.body; // Get the array of image IDs from body
+        const { slug } = req.params; // Get product slug from URL parameters
+
+        try {
+            const product = await Product.findOne({ slug ,website_name:domain_name});
+
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Filter images to keep only those that exist in the product
+            const existingImages = product.images.filter(image => imageIds.includes(image._id.toString()));
+
+            // Reorder images based on the order of IDs in the imageIds array
+            const orderedImages = imageIds.map(id => existingImages.find(image => image._id.toString() === id)).filter(Boolean);
+
+            // Update the product with the reordered images
+            product.images = orderedImages;
+            await product.save();
+
+            return res.status(200).json(createResponse("Images reordered successfully.", "success", 200, {data:{images:product.images}}));
+        } catch (error) {
             return res.status(500).json(createResponse("Internal server error.", "error", 500));
         }
     }

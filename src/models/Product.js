@@ -89,13 +89,23 @@ const productSchema = new mongoose.Schema({
         }
     },
 
-    images: [{ 
-        type: String,
-        validate: {
-            validator: function(imagesArray) {
-                return imagesArray.length > 0;
-            },
-            message: 'Product must have at least one image.'
+    images: [{
+        // MongoDB automatically generates this ID
+        url: {
+            type: String,
+            required: [true, 'Image URL is required.'],
+            validate: {
+                // Validate that the URL ends with a valid image file format
+                validator: function(value) {
+                    return /\.(jpg|jpeg|png|webp|gif)$/i.test(value);
+                },
+                message: 'Image URL must end with a valid image file format (e.g., jpg, jpeg, png, webp, gif).'
+            }
+        },
+        alt: {
+            type: String,
+            default: "Product Image",
+            maxlength: 100
         }
     }],
     store: {

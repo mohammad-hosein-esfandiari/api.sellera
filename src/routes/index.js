@@ -14,10 +14,16 @@ const checkSubscription = require('../middlewares/checkSubscription');
 
 
 router.use("/upload", UploadRoutes )
+
+
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
+
+
 router.use("/website/protected",checkSubscription, authenticateToken , websiteProtectedRoutes )
 router.use("/website",  WebsiteRoutes)
+
+
 router.use("/products/protected" ,authenticateToken ,hasPermissions(["product"]), ProductProtectedRoutes)
 router.use("/products" , ProductRoutes)
 
