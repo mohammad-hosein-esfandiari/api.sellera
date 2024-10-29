@@ -17,10 +17,18 @@ exports.validationResetPasswordRequest = [
 // Controller for requesting password reset
 exports.requestPasswordReset = async (req, res) => {
   // Check for validation errors
-  console.log('hi')
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).send(createResponse(errors.array(), 'error', 400));
+      const formattedErrors = errors.array().reduce((acc, error) => {
+          const { path, msg } = error;
+          if (!acc[path]) {
+              acc[path] = []; // Initialize an array for this field
+          }
+          acc[path].push(msg); // Add the message to the array
+          return acc;
+      }, {});
+
+      return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
   }
 
   try {
@@ -92,7 +100,16 @@ exports.validationVerifyResetToken = [
   exports.verifyResetToken = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send(createResponse(errors.array(), 'error', 400));
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
     }
   
     try {
@@ -138,9 +155,17 @@ exports.validationResetPasswordChange = [
   exports.resetAndChangePassword = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send(createResponse(errors.array(), 'error', 400));
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
     }
-  
     try {
       const { resetToken, newPassword } = req.body;
   

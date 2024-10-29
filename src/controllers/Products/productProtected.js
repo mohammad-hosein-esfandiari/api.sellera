@@ -23,7 +23,16 @@ exports.addProduct = [
             // Validate the request
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json(createResponse(errors.array()[0].msg, "error", 400));
+                const formattedErrors = errors.array().reduce((acc, error) => {
+                    const { path, msg } = error;
+                    if (!acc[path]) {
+                        acc[path] = []; // Initialize an array for this field
+                    }
+                    acc[path].push(msg); // Add the message to the array
+                    return acc;
+                }, {});
+    
+                return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
             }
 
             const { title, domain_name } = req.body; // Get the title and domain_name from the request body
@@ -65,7 +74,16 @@ exports.updateProductTitle = [
     async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: errors.array().map(item => item.msg) }));
+            const formattedErrors = errors.array().reduce((acc, error) => {
+                const { path, msg } = error;
+                if (!acc[path]) {
+                    acc[path] = []; // Initialize an array for this field
+                }
+                acc[path].push(msg); // Add the message to the array
+                return acc;
+            }, {});
+
+            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
         }
 
         try {
@@ -87,9 +105,6 @@ exports.updateProductTitle = [
 
 
 
-
-
-
 // Update product category based on slug and website domain
 exports.updateProductCategory = [
     // Validation rules for category and domain_name fields
@@ -105,13 +120,18 @@ exports.updateProductCategory = [
         // Check for validation errors
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json(createResponse(
-                "Validation failed.",
-                "error",
-                400,
-                { errors: errors.array().map(item => item.msg) }
-            ));
+            const formattedErrors = errors.array().reduce((acc, error) => {
+                const { path, msg } = error;
+                if (!acc[path]) {
+                    acc[path] = []; // Initialize an array for this field
+                }
+                acc[path].push(msg); // Add the message to the array
+                return acc;
+            }, {});
+
+            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
         }
+
 
         try {
             const { slug } = req.params; // Extract product slug from URL parameters
@@ -158,6 +178,66 @@ exports.updateProductCategory = [
             ));
         } catch (error) {
             // Handle any internal server errors
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+
+// Update product price
+exports.updateProductPrice = [
+    // Validate amount
+    check('amount')
+        .notEmpty().withMessage('Amount cannot be empty.')
+        .isFloat({ min: 0 }).withMessage('Amount must be a positive number.'),
+
+    // Validate currency
+    check('currency')
+        .notEmpty().withMessage('Currency cannot be empty.')
+        .isAlpha().withMessage('Currency must contain only letters.'),
+
+    // Validate domain_name
+    check('domain_name')
+        .notEmpty().withMessage('Domain name cannot be empty.')
+        .isString().withMessage('Domain name must be a valid string.'),
+
+    // Controller function
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const formattedErrors = errors.array().reduce((acc, error) => {
+                const { path, msg } = error;
+                if (!acc[path]) {
+                    acc[path] = []; // Initialize an array for this field
+                }
+                acc[path].push(msg); // Add the message to the array
+                return acc;
+            }, {});
+
+            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+        }
+
+        try {
+            const { slug, website } = req.params;
+            const { amount, currency, domain_name } = req.body;
+
+            // Combine amount and currency into a single price string
+            const price = `${amount} ${currency}`;
+
+            const product = await Product.findOneAndUpdate(
+                { slug, website_name: domain_name },  // Use domain_name from body
+                { price },
+                { new: true }
+            );
+
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            return res.status(200).json(createResponse("Product price updated successfully.", "success", 200, { data: product }));
+        } catch (error) {
+            console.error("Error updating product price:", error);
             return res.status(500).json(createResponse("Internal server error.", "error", 500));
         }
     }

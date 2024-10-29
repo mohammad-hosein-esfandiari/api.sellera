@@ -33,9 +33,16 @@ exports.createWebsite = async (req, res) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send(
-        createResponse('Validation failed.', 'error', 400, { errors: errors.array() })
-      );
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
     }
 
     const seller = await User.findOne({_id:req.user.id}).select("website_id")
@@ -835,15 +842,19 @@ exports.addCategory = [
 
   // Controller logic for adding a category
   async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-          return res.status(400).json(createResponse(
-              "Validation failed.",
-              "error",
-              400,
-              { errors: errors.array().map(item => item.msg) }
-          ));
-      }
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+    }
 
       try {
           const { category, domain_name } = req.body;
@@ -890,15 +901,19 @@ exports.removeCategory = [
 
   // Controller logic for removing a category
   async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-          return res.status(400).json(createResponse(
-              "Validation failed.",
-              "error",
-              400,
-              { errors: errors.array().map(item => item.msg) }
-          ));
-      }
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+    }
 
       try {
           const { category, domain_name } = req.body;

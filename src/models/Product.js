@@ -78,8 +78,15 @@ const productSchema = new mongoose.Schema({
         default:""
     },
     price: {
-        type: Number,
-        default:0
+        amount: {
+            type: Number,
+            default: 0,
+            min: [0, 'Price amount cannot be negative.']
+        },
+        currency: {
+            type: String,
+            default: ''
+        }
     },
 
     images: [{ 

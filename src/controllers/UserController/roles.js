@@ -98,7 +98,16 @@ const updateSellerFields = async (req, res) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send(createResponse(errors.array(), 'error', 400));
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
     }
   
     try {
@@ -171,7 +180,16 @@ const validationDeletePaymentMethod = [
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send(createResponse(errors.array(), 'error', 400));
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
     }
   
     try {

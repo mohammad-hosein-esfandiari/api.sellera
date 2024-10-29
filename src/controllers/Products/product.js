@@ -29,8 +29,6 @@ exports.getProductBySlug = async (req, res) => {
 };
 
 
-
-
 // Export the controller function
 exports.getProductsOfWebsiteByFilter = [
     // Validation middleware
@@ -54,7 +52,16 @@ exports.getProductsOfWebsiteByFilter = [
         // Validate incoming request
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json(createResponse('Invalid filter input.', 'error', 400, { errors: errors.array() }));
+            const formattedErrors = errors.array().reduce((acc, error) => {
+                const { path, msg } = error;
+                if (!acc[path]) {
+                    acc[path] = []; // Initialize an array for this field
+                }
+                acc[path].push(msg); // Add the message to the array
+                return acc;
+            }, {});
+
+            return res.status(400).json(createResponse("Invalid Input field.", "error", 400, { errors: formattedErrors }));
         }
 
         try {
@@ -76,7 +83,7 @@ exports.getProductsOfWebsiteByFilter = [
             } = req.query; // Get all filters from the query string
 
             // Base query to filter by website and isOnline
-            let query = { website_name: website ,isOnline:true};
+            let query = { website_name: website };
 
             // Apply filters if provided
             if (category) query.category = category;
@@ -112,6 +119,11 @@ exports.getProductsOfWebsiteByFilter = [
 
             // Get total count for pagination
             const totalProducts = await Product.countDocuments(query);
+
+            if(!totalProducts.length){
+                return res.status(200).json(createResponse("No products found","warning",200,{data:[]}));
+
+            }
 
             // Send the response
             return res.status(200).json(

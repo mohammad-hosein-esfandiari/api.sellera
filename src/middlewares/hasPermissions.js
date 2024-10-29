@@ -6,6 +6,11 @@ const hasPermissions = (requiredPermissions) => {
     return async (req, res, next) => {
         const userRoles = req.user.roles; // Get user roles from request
         const { domain_name } = req.body; // Extract domain name from request body
+
+        if(!domain_name){
+            return res.status(400).json(createResponse('You must enter the website domain in body', 'error', 404));
+        }
+
         const website = await Website.findOne({ domain_name }); // Find the website by domain name
 
         // Check if the website exists
