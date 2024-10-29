@@ -1,3 +1,4 @@
+const { handleValidationErrors } = require("../../middlewares/handleValidation");
 const { Product } = require("../../models/Product");
 const { Website } = require("../../models/Website");
 const createResponse = require("../../utils/createResponse");
@@ -18,22 +19,10 @@ const productValidationRules = () => {
 
 exports.addProduct = [
     productValidationRules(), // Applying validation rules
+    handleValidationErrors,
     async (req, res) => {
         try {
-            // Validate the request
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                const formattedErrors = errors.array().reduce((acc, error) => {
-                    const { path, msg } = error;
-                    if (!acc[path]) {
-                        acc[path] = []; // Initialize an array for this field
-                    }
-                    acc[path].push(msg); // Add the message to the array
-                    return acc;
-                }, {});
-    
-                return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
-            }
+
 
             const { title, domain_name } = req.body; // Get the title and domain_name from the request body
 
@@ -71,20 +60,9 @@ exports.updateProductTitle = [
         .isLength({ min: 3, max: 100 }).withMessage('Title must be between 3 and 100 characters.'),
     check('domain_name')
         .isString().withMessage('Domain name must be a string.'),
+        handleValidationErrors,
     async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const formattedErrors = errors.array().reduce((acc, error) => {
-                const { path, msg } = error;
-                if (!acc[path]) {
-                    acc[path] = []; // Initialize an array for this field
-                }
-                acc[path].push(msg); // Add the message to the array
-                return acc;
-            }, {});
 
-            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
-        }
 
         try {
             const { slug  } = req.params;
@@ -114,23 +92,9 @@ exports.updateProductCategory = [
 
     check('domain_name')
         .isString().withMessage('Domain name must be a valid string.'),
-
+        handleValidationErrors,
     // Controller logic for updating product category
     async (req, res) => {
-        // Check for validation errors
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const formattedErrors = errors.array().reduce((acc, error) => {
-                const { path, msg } = error;
-                if (!acc[path]) {
-                    acc[path] = []; // Initialize an array for this field
-                }
-                acc[path].push(msg); // Add the message to the array
-                return acc;
-            }, {});
-
-            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
-        }
 
 
         try {
@@ -201,22 +165,10 @@ exports.updateProductPrice = [
     check('domain_name')
         .notEmpty().withMessage('Domain name cannot be empty.')
         .isString().withMessage('Domain name must be a valid string.'),
-
+        handleValidationErrors,
     // Controller function
     async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const formattedErrors = errors.array().reduce((acc, error) => {
-                const { path, msg } = error;
-                if (!acc[path]) {
-                    acc[path] = []; // Initialize an array for this field
-                }
-                acc[path].push(msg); // Add the message to the array
-                return acc;
-            }, {});
 
-            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
-        }
 
         try {
             const { slug } = req.params;
@@ -252,22 +204,9 @@ exports.toggleProductStatus = [
     // Validation checks for 'domain_name' and 'slug'
     check("domain_name").notEmpty().isString().withMessage("Domain name must be a valid string."),
     check("slug").notEmpty().isString().withMessage("Slug must be a valid string."),
-
+    handleValidationErrors,
     async (req, res) => {
-        // Check for validation errors in the request
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const formattedErrors = errors.array().reduce((acc, error) => {
-                const { path, msg } = error;
-                if (!acc[path]) {
-                    acc[path] = []; // Initialize an array for this field
-                }
-                acc[path].push(msg); // Add the message to the array
-                return acc;
-            }, {});
 
-            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
-        }
 
         try {
             const { slug } = req.params;
@@ -324,22 +263,8 @@ exports.addBanner = [
         .optional() // Alt text is optional
         .isString().withMessage('Alt text must be a string.')
         .isLength({ max: 100 }).withMessage('Alt text must be at most 100 characters long.'),
-    
+        handleValidationErrors,
     async (req, res) => {
-        // Check for validation errors in the request
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const formattedErrors = errors.array().reduce((acc, error) => {
-                const { path, msg } = error;
-                if (!acc[path]) {
-                    acc[path] = []; // Initialize an array for this field
-                }
-                acc[path].push(msg); // Add the message to the array
-                return acc;
-            }, {});
-
-            return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
-        }
 
         
         const { url, alt } = req.body;
@@ -373,22 +298,9 @@ exports.deleteBannerById = [
     check('imageId')
         .notEmpty().withMessage('Image ID cannot be empty.')
         .isMongoId().withMessage('Invalid Image ID format.'),
-    
+        handleValidationErrors,
     async (req, res) => {
-             // Check for validation errors in the request
-             const errors = validationResult(req);
-             if (!errors.isEmpty()) {
-                 const formattedErrors = errors.array().reduce((acc, error) => {
-                     const { path, msg } = error;
-                     if (!acc[path]) {
-                         acc[path] = []; // Initialize an array for this field
-                     }
-                     acc[path].push(msg); // Add the message to the array
-                     return acc;
-                 }, {});
-     
-                 return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
-             }
+
      
         const { imageId } = req.body; // Getting the ID of the image to be deleted
         const { slug } = req.params; // Getting slug from URL parameters
@@ -432,21 +344,9 @@ exports.updateBannerById = [
         .isString().withMessage('Alt text must be a string.')
         .isLength({ max: 100 }).withMessage('Alt text must be at most 100 characters long.'),
     
+    handleValidationErrors,
     async (req, res) => {
-             // Check for validation errors in the request
-             const errors = validationResult(req);
-             if (!errors.isEmpty()) {
-                 const formattedErrors = errors.array().reduce((acc, error) => {
-                     const { path, msg } = error;
-                     if (!acc[path]) {
-                         acc[path] = []; // Initialize an array for this field
-                     }
-                     acc[path].push(msg); // Add the message to the array
-                     return acc;
-                 }, {});
-     
-                 return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
-             }
+
 
         const { imageId } = req.body; // Getting the ID of the image to be updated
         const { slug } = req.params; // Getting slug from URL parameters
@@ -482,12 +382,8 @@ exports.updateImageOrder = [
     check('imageIds')
         .isArray().withMessage('Image IDs must be an array.')
         .notEmpty().withMessage('Image IDs array cannot be empty.'),
-    
+        handleValidationErrors,
     async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json(createResponse("Validation failed", "error", 400, errors.array()));
-        }
 
         const { imageIds ,domain_name} = req.body; // Get the array of image IDs from body
         const { slug } = req.params; // Get product slug from URL parameters
@@ -510,6 +406,266 @@ exports.updateImageOrder = [
             await product.save();
 
             return res.status(200).json(createResponse("Images reordered successfully.", "success", 200, {data:{images:product.images}}));
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+
+// API to update the store quantity of a product
+exports.updateStore = [
+    // Validation for store field
+    check('store')
+        .isInt({ min: 0 }).withMessage('Store quantity must be a non-negative integer.'),
+
+    handleValidationErrors, // Call the validation error handler
+
+    async (req, res) => {
+        const { store, domain_name } = req.body; // Store quantity and domain name from request body
+        const { slug } = req.params; // Product slug from URL parameters
+
+        try {
+            // Find the product by slug and domain name
+            const product = await Product.findOne({ slug, website_name: domain_name });
+
+            // If the product is not found, return a 404 error
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Update the store quantity
+            product.store = store;
+
+            // Save the updated product
+            await product.save();
+
+            // Send a success response with the updated product
+            return res.status(200).json(createResponse("Store quantity updated successfully.", "success", 200, {data:{ store: product.store }}));
+        } catch (error) {
+            // Return a 500 error in case of any internal server error
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+// API to update the colors of a product
+exports.updateColors = [
+    // Validation for colors field
+    check('colors')
+        .isArray().withMessage('Colors must be an array.')
+        .notEmpty().withMessage('Colors array cannot be empty.')
+        .custom((colors) => colors.every(color => typeof color === 'string')).withMessage('All colors must be strings.'),
+
+    handleValidationErrors, // Call the validation error handler
+
+    async (req, res) => {
+        const { colors, domain_name } = req.body; // Colors and domain name from request body
+        const { slug } = req.params; // Product slug from URL parameters
+
+        try {
+            // Find the product by slug and domain name
+            const product = await Product.findOne({ slug, website_name: domain_name });
+
+            // If the product is not found, return a 404 error
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Update the colors
+            product.colors = colors;
+
+            // Save the updated product
+            await product.save();
+
+            // Send a success response with the updated colors
+            return res.status(200).json(createResponse("Colors updated successfully.", "success", 200, { colors: product.colors }));
+        } catch (error) {
+            // Return a 500 error in case of any internal server error
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+// Regular expression to check for hex color code
+const hexColorRegex = /^#([0-9A-F]{3}){1,2}$/i;
+
+// API to update the colors of a product
+exports.updateColors = [
+    // Validation for colors field
+    check('colors')
+        .isArray().withMessage('Colors must be an array.')
+        .notEmpty().withMessage('Colors array cannot be empty.')
+        .custom((colors) => colors.every(color => hexColorRegex.test(color)))
+        .withMessage('All colors must be valid hex color codes.'),
+
+    handleValidationErrors, // Call the validation error handler
+
+    async (req, res) => {
+        const { colors, domain_name } = req.body; // Colors and domain name from request body
+        const { slug } = req.params; // Product slug from URL parameters
+
+        try {
+            // Find the product by slug and domain name
+            const product = await Product.findOne({ slug, website_name: domain_name });
+
+            // If the product is not found, return a 404 error
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Update the colors
+            product.colors = colors;
+
+            // Save the updated product
+            await product.save();
+
+            // Send a success response with the updated colors
+            return res.status(200).json(createResponse("Colors updated successfully.", "success", 200, {data:{ colors: product.colors }}));
+        } catch (error) {
+            // Return a 500 error in case of any internal server error
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+// API to update the introduction field of a product
+exports.updateIntroduction = [
+    // Validation for introduction field
+    check('introduction')
+        .isString().withMessage('Introduction must be a string.')
+        .notEmpty().withMessage('Introduction cannot be empty.'),
+
+    handleValidationErrors, // Call the validation error handler
+
+    async (req, res) => {
+        const { introduction, domain_name } = req.body; // Introduction and domain name from request body
+        const { slug } = req.params; // Product slug from URL parameters
+
+        try {
+            // Find the product by slug and domain name
+            const product = await Product.findOne({ slug, website_name: domain_name });
+
+            // If the product is not found, return a 404 error
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Update the introduction field
+            product.introduction = introduction;
+
+            // Save the updated product
+            await product.save();
+
+            // Send a success response with the updated introduction
+            return res.status(200).json(createResponse("Introduction updated successfully.", "success", 200, {data:{ introduction: product.introduction }}));
+        } catch (error) {
+            // Return a 500 error in case of any internal server error
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+
+
+
+
+// API to add details to a product
+exports.addDetail = [
+    // Validation for details fields
+    check('base_title').isString().withMessage('Base title must be a string.').notEmpty().withMessage('Base title is required.'),
+    check('items').isArray({ min: 1 }).withMessage('Items should be a non-empty array.'),
+    check('items.*.title').isString().withMessage('Item title must be a string.').notEmpty().withMessage('Item title is required.'),
+    check('items.*.description').isString().withMessage('Item description must be a string.').notEmpty().withMessage('Item description is required.'),
+
+    handleValidationErrors,
+
+    async (req, res) => {
+        const { base_title, items, domain_name } = req.body;
+        const { slug } = req.params;
+
+        try {
+            const product = await Product.findOne({ slug, website_name: domain_name });
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            product.details.push({ base_title, items });
+            await product.save();
+
+            return res.status(200).json(createResponse("Details added successfully.", "success", 200, {data:{ details: product.details }}));
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+// API to update details in a product
+exports.updateDetail = [
+    check('base_title').optional().isString().withMessage('Base title must be a string.'),
+    check('items').optional().isArray().withMessage('Items should be an array.'),
+    check('items.*.title').optional().isString().withMessage('Item title must be a string.'),
+    check('items.*.description').optional().isString().withMessage('Item description must be a string.'),
+
+    handleValidationErrors,
+
+    async (req, res) => {
+        const { id } = req.params;
+        const { base_title, items, domain_name } = req.body;
+        const { slug } = req.params;
+
+        try {
+            const product = await Product.findOne({ slug, website_name: domain_name });
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            const detail = product.details.id(id);
+            if (!detail) {
+                return res.status(404).json(createResponse("Detail not found.", "error", 404));
+            }
+
+            if (base_title) detail.base_title = base_title;
+            if (items) detail.items = items;
+
+            await product.save();
+
+            return res.status(200).json(createResponse("Details updated successfully.", "success", 200, {data:{ details: product.details }}));
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+// API to delete a detail by ID
+exports.deleteDetail = [
+    // Validation for detailId
+    check('id').isMongoId().withMessage('Invalid detail ID.'),
+
+    handleValidationErrors,
+
+    async (req, res) => {
+        const { domain_name } = req.body; // Get the domain name from the request body
+        const { slug, id } = req.params; // Get product slug and detailId from route parameters
+
+        try {
+            const product = await Product.findOne({ slug, website_name: domain_name });
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Filter out the detail with the specified detailId
+            product.details = product.details.filter(detail => detail._id.toString() !== id);
+
+            await product.save();
+
+            return res.status(200).json(createResponse("Detail deleted successfully.", "success", 200 , {data:{details:product.details}}));
         } catch (error) {
             return res.status(500).json(createResponse("Internal server error.", "error", 500));
         }
