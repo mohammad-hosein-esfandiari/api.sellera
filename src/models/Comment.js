@@ -38,7 +38,7 @@ const commentSchema = new mongoose.Schema({
     content: {
         type: String,
         required: [true, 'Comment content is required.'],
-        minlength: [10, 'Comment content must be at least 10 characters long.'],
+        minlength: [1, 'Comment content must be at least 10 characters long.'],
         maxlength: [1000, 'Comment content must be less than 1000 characters.'] // Set a maximum length for comment content
     },
     likes: [{
@@ -53,7 +53,7 @@ commentSchema.pre('save', function(next) {
     if (this.replies.length > 0) {
         // Check if all replies have valid content length
         this.replies.forEach(reply => {
-            if (reply.content.length < 10 || reply.content.length > 500) {
+            if (reply.content.length < 1 || reply.content.length > 500) {
                 next(new Error('Each reply content must be between 10 and 500 characters long.'));
             }
         });

@@ -1,6 +1,7 @@
-const { check , validationResult} = require("express-validator");
+const { check , validationResult, param} = require("express-validator");
 const { Product } = require("../../models/Product");
 const createResponse = require("../../utils/createResponse");
+const { handleValidationErrors } = require("../../middlewares/handleValidation");
 
 exports.getProductBySlug = async (req, res) => {
   try {
@@ -138,6 +139,55 @@ exports.getProductsOfWebsiteByFilter = [
             );
         } catch (error) {
             return res.status(500).json(createResponse('Server error.', 'error', 500));
+        }
+    }
+];
+
+
+// API to add a Rating with validation for website_name and slug parameters
+exports.addRating = [
+    // Validate that `website_name` exists in the request parameters
+    param('website')
+        .notEmpty()
+        .withMessage('Website name is required in parameters.'),
+
+    // Validate that `slug` exists in the request parameters
+    param('slug')
+        .notEmpty()
+        .withMessage('Slug is required in parameters.'),
+
+    // Validate that the rating `value` is between 0 and 5
+    check('value')
+        .isInt({ min: 0, max: 5 })
+        .withMessage('Rating value must be between 0 and 5.'),
+
+    // Handle validation errors using middleware
+    handleValidationErrors,
+
+    async (req, res) => {
+        const { website: website_name, slug } = req.params;
+        const userId = req.user.id;
+
+        try {
+            // Find the product using slug and website_name
+            const product = await Product.findOne({ slug, website_name });
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Check if the user has already given a rating for this product
+            const existingRating = product.rating.find(r => r.user.toString() === userId);
+            if (existingRating) {
+                return res.status(400).json(createResponse("User has already rated this product.", "error", 400));
+            }
+
+            // Add new rating to the product's rating array
+            product.rating.push({ user: userId, value: req.body.value });
+            await product.save();
+
+            return res.status(201).json(createResponse("Rating added successfully.", "success", 201));
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
         }
     }
 ];

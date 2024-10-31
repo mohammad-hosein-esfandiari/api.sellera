@@ -66,7 +66,7 @@ const websiteSchema = new mongoose.Schema({
         permissions: {
             type: [{
                 type: String,
-                enum: ["admin", "product", "order", "comment"], // Allowed permission levels
+                enum: ["admin", "product", "order", "comment", "seo"], // Allowed permission levels
                 required: [true, 'Permissions are required.'] // Ensure permissions are provided
             }],
             validate: {

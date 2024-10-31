@@ -497,7 +497,7 @@ exports.confirmRequestAddSupport = async (req, res) => {
   }
 };
 
-const validPermissions = ["admin", "product", "order", "comment"];
+const validPermissions = ["admin", "product", "order", "comment","seo"];
 
 exports.addSupport = async (req, res) => {
   try {
