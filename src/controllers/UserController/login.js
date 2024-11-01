@@ -24,6 +24,13 @@ const login = async (req, res) => {
       return res.status(401).json(createResponse("Invalid email or password.", "error", 401));
     }
 
+    // check use if login with this device
+    const session = await Session.findOne({ "session.userId": user._id, "session.systemType": systemType });
+
+    if (session) {
+      return res.status(403).json(createResponse("You are already logged in with this device .please login with another device.", "error", 403));
+      }
+
     // Check if the account is locked
     if (user.lockUntil && user.lockUntil > Date.now()) {
       const lockDuration = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));  // Remaining lock time in minutes

@@ -24,7 +24,7 @@ router.use("/website/protected",checkSubscription, authenticateToken , websitePr
 router.use("/website",  WebsiteRoutes)
 
 
-router.use("/products/protected" ,authenticateToken ,hasPermissions(["product"]), ProductProtectedRoutes)
+router.use("/products/protected" ,checkSubscription ,authenticateToken , ProductProtectedRoutes)
 router.use("/products" , ProductRoutes)
 
 

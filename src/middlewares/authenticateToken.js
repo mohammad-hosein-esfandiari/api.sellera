@@ -31,10 +31,10 @@ const authenticateToken = async (req, res, next) => {
 
     try {
       // Verify the refresh token
-      const refreshTokenDecoded = await jwt.verify(sessionRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+      const refreshTokenDecoded =  jwt.verify(sessionRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
       // If the refresh token is valid, create a new access token
-      const newAccessToken = await createToken(refreshTokenDecoded.id, refreshTokenDecoded.roles);
+      const newAccessToken =  createToken(refreshTokenDecoded.id, refreshTokenDecoded.roles);
       req.user = { ...refreshTokenDecoded, newAccessToken }; // Store user info with the new access token
 
       // Update the session

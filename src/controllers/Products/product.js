@@ -145,6 +145,7 @@ exports.getProductsOfWebsiteByFilter = [
 
 
 // API to add a Rating with validation for website_name and slug parameters
+
 exports.addRating = [
     // Validate that `website_name` exists in the request parameters
     param('website')
@@ -186,6 +187,54 @@ exports.addRating = [
             await product.save();
 
             return res.status(201).json(createResponse("Rating added successfully.", "success", 201));
+        } catch (error) {
+            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+        }
+    }
+];
+
+
+
+
+
+// Toggle like/dislike for a product
+exports.toggleLike = [
+
+    // Controller logic for toggling like/dislike
+    async (req, res) => {
+        try {
+            const {slug , website}  = req.params
+            const userId = req.user.id
+            // Find the product by slug and website_name
+            const product = await Product.findOne({ slug, website_name:website });
+            if (!product) {
+                return res.status(404).json(createResponse("Product not found.", "error", 404));
+            }
+
+            // Check if the user already liked the product
+            const userIndex = product.likes.indexOf(userId);
+
+            if (userIndex === -1) {
+                // User has not liked the product, so add the user ID to the likes array
+                product.likes.push(userId);
+                await product.save(); // Save changes to the product
+                return res.status(200).json(createResponse(
+                    "Product liked successfully.",
+                    "success",
+                    200,
+                    { likes: product.likes }
+                ));
+            } else {
+                // User has already liked the product, so remove the user ID from the likes array
+                product.likes.splice(userIndex, 1);
+                await product.save(); // Save changes to the product
+                return res.status(200).json(createResponse(
+                    "Like removed successfully.",
+                    "success",
+                    200,
+                    { likes: product.likes }
+                ));
+            }
         } catch (error) {
             return res.status(500).json(createResponse("Internal server error.", "error", 500));
         }

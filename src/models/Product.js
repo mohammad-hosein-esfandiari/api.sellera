@@ -15,8 +15,10 @@ const shippingSchema = new mongoose.Schema({
 const specialOfferSchema = new mongoose.Schema({
     active: { type: Boolean, default: false },
     offerDescription: { type: String },
-    offerEndDate: { type: Date }
-},{ _id: false });
+    offerEndDate: { type: Date },
+    offerStartDate: { type: Date },
+    discount: { type: Number, default: 0 }
+});
 
 // Define the schema for SEO
 const seoSchema = new mongoose.Schema({
@@ -86,6 +88,10 @@ const productSchema = new mongoose.Schema({
         currency: {
             type: String,
             default: ''
+        },
+        discount: {
+            type: Number,
+            default: 0
         }
     },
 
@@ -125,12 +131,23 @@ const productSchema = new mongoose.Schema({
         metaDescription: "",
         keywords: []
     }},
-    tags: [{ type: String }],
-    specialOffer: {type:specialOfferSchema , default:{
-        active: false,
-        offerDescription: "",
-        offerEndDate: ""
-    }},
+     // Tags schema with validation
+     tags: {
+        type: [{ type: String }],
+        validate: {
+            validator: function (tags) {
+                // Check that the array has a maximum of 10 tags
+                if (tags.length > 10) return false;
+                // Check that each tag starts with "#" and is non-empty
+                return tags.every(tag => typeof tag === 'string' && tag.trim().length > 0 && tag.startsWith('#'));
+            },
+            message: 'Each tag must be a non-empty string starting with "#" and the total tags should not exceed 10.'
+        }
+    },
+    specialOffers: {
+        type: [specialOfferSchema],
+        default: []
+    },
     analytics: {
         purchasedCount: { type: Number, default: 0 }
     },

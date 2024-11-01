@@ -1,46 +1,127 @@
 const express = require("express");
 const ProductProtectedController = require("../../controllers/Products/productProtected");
+const { hasPermissions } = require("../../middlewares/hasPermissions");
 const router = express.Router();
 
+router.post(
+  "/add",
+  hasPermissions(["product"]),
+  ProductProtectedController.addProduct
+);
 
+router.patch(
+  "/:slug/title",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateProductTitle
+);
 
+router.patch(
+  "/:slug/category",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateProductCategory
+);
 
-router.post("/add", ProductProtectedController.addProduct);
+router.patch(
+  "/:slug/price",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateProductPrice
+);
 
-router.patch("/:slug/title", ProductProtectedController.updateProductTitle);
+router.patch(
+  "/:slug/status",
+  hasPermissions(["product"]),
+  ProductProtectedController.toggleProductStatus
+);
 
-router.patch("/:slug/category", ProductProtectedController.updateProductCategory);
+router.post(
+  "/:slug/image",
+  hasPermissions(["product"]),
+  ProductProtectedController.addBanner
+);
+router.delete(
+  "/:slug/image",
+  hasPermissions(["product"]),
+  ProductProtectedController.deleteBannerById
+);
+router.put(
+  "/:slug/image",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateBannerById
+);
+router.put(
+  "/:slug/image-order",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateImageOrder
+);
 
-router.patch("/:slug/price", ProductProtectedController.updateProductPrice);
+router.patch(
+  "/:slug/store",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateStore
+);
 
-router.patch("/:slug/status", ProductProtectedController.toggleProductStatus);
+router.patch(
+  "/:slug/colors",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateColors
+);
 
-router.post("/:slug/image", ProductProtectedController.addBanner);
-router.delete("/:slug/image", ProductProtectedController.deleteBannerById);
-router.put("/:slug/image", ProductProtectedController.updateBannerById);
-router.put("/:slug/image-order", ProductProtectedController.updateImageOrder);
+router.patch(
+  "/:slug/introduction",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateIntroduction
+);
 
-router.patch("/:slug/store", ProductProtectedController.updateStore);
+router.post(
+  "/:slug/details",
+  hasPermissions(["product"]),
+  ProductProtectedController.addDetail
+);
+router.put(
+  "/:slug/details/:id",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateDetail
+);
+router.delete(
+  "/:slug/details/:id",
+  hasPermissions(["product"]),
+  ProductProtectedController.deleteDetail
+);
 
-router.patch("/:slug/colors", ProductProtectedController.updateColors);
+router.patch(
+  "/:slug/seo",
+  hasPermissions(["seo"]),
+  ProductProtectedController.updateSEO
+);
 
-router.patch("/:slug/introduction", ProductProtectedController.updateIntroduction);
+router.put(
+  "/:slug/tags",
+  hasPermissions(["seo"]),
+  ProductProtectedController.updateTags
+);
 
-router.post("/:slug/details", ProductProtectedController.addDetail);
-router.put("/:slug/details/:id", ProductProtectedController.updateDetail);
-router.delete("/:slug/details/:id", ProductProtectedController.deleteDetail);
+router.post(
+  "/:slug/special-offer",
+  hasPermissions(["product","seo"]),
+  ProductProtectedController.addSpecialOffer
+);
 
+router.put(
+  "/:slug/special-offer/:offerId",
+  hasPermissions(["product","seo"]),
+  ProductProtectedController.updateSpecialOffer
+);
 
+router.delete(
+  "/:slug/special-offer/:offerId",
+  hasPermissions(["product","seo"]),
+  ProductProtectedController.deleteSpecialOffer
+);
 
-
-
-
-
-
-
-
-
-
-
+router.put(
+  "/:slug/shipping",
+  hasPermissions(["product"]),
+  ProductProtectedController.updateShipping
+);
 
 module.exports = router;

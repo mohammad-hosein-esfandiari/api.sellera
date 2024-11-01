@@ -8,6 +8,7 @@ require("dotenv").config();
 
 const jsonContentMiddleware = require("./middlewares/jsonContentMiddleWare");
 const checkBodySyntax = require("./middlewares/checkBodySyntax");
+const startSpecialOfferJob = require("./configs/SpecialOfferCron");
 
 const app = express(); // Creating an instance of an Express application
 
@@ -63,6 +64,9 @@ app.use("/api", routes); // Mounting the routes under '/api'
 
 // Middleware to catch JSON parsing errors
 app.use(checkBodySyntax);
+
+// Cron for update special offer of products
+startSpecialOfferJob()
 
 // Exporting the app for use in other files (e.g., for starting the server)
 module.exports = app;
