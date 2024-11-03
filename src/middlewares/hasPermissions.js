@@ -15,11 +15,15 @@ const hasPermissions = (requiredPermissions) => {
 
         // Check if the website exists
         if (!website) {
-            return res.status(404).json(createResponse('Website not found.', 'error', 404));
+            return res.status(404).json(createResponse('Website not found...', 'error', 404));
         }
     // Check if user is the seller of the website
     if (userRoles.includes('seller') && website.seller_id.toString() === req.user.id) {
-        req.website = website._id;
+        req.website = {
+            id: website._id,
+            categories: website.categories
+        }
+       
         return next(); // Allow access for sellers
     }
 
@@ -37,7 +41,11 @@ const hasPermissions = (requiredPermissions) => {
         
         // Check if user has admin permission from the supports array
         if (supportUser && supportUser.permissions.includes('admin')) {
-            req.website = website._id;
+            req.website = {
+                id: website._id,
+                categories: website.categories
+            }
+           
             return next(); // Allow access for users with admin permission
         }
 
@@ -52,7 +60,11 @@ const hasPermissions = (requiredPermissions) => {
     
             // If user is a support and has permission, proceed
             if (userRoles.includes('support') && isSupportOfWebsite && hasPermission) {
-                req.website = website._id;
+                req.website = {
+                    id: website._id,
+                    categories: website.categories
+                }
+               
                 return next();
             }
         }

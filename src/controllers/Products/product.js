@@ -2,6 +2,7 @@ const { check , validationResult, param} = require("express-validator");
 const { Product } = require("../../models/Product");
 const createResponse = require("../../utils/createResponse");
 const { handleValidationErrors } = require("../../middlewares/handleValidation");
+const { Website } = require("../../models/Website");
 
 exports.getProductBySlug = async (req, res) => {
   try {
@@ -83,9 +84,17 @@ exports.getProductsOfWebsiteByFilter = [
                 maxPrice,
             } = req.query; // Get all filters from the query string
 
-            // Base query to filter by website and isOnline
-            let query = { website_name: website };
+            
+            const websiteModel = await Website.findOne({ domain_name: website });
 
+            if (!websiteModel) {
+                return res.status(404).json(createResponse("Website not found.", "error", 404));
+            }
+
+
+            // Base query to filter by website and isOnline
+            let query = { website_id : websiteModel._id.toString() };
+    
             // Apply filters if provided
             if (category) query.category = category;
             if (inStock) query.store = { $gt: 0 }; // Filter products that are in stock
@@ -114,14 +123,16 @@ exports.getProductsOfWebsiteByFilter = [
 
             // Execute query with sort, limit, and skip
             const products = await Product.find(query)
+                .select('-website_id -updatedAt -__v -details -tags -seo')
                 .sort(sortOptions)
                 .limit(limit)
                 .skip(skip);
 
             // Get total count for pagination
+
             const totalProducts = await Product.countDocuments(query);
 
-            if(!totalProducts.length){
+            if(!totalProducts){
                 return res.status(200).json(createResponse("No products found","warning",200,{data:[]}));
 
             }
@@ -171,7 +182,7 @@ exports.addRating = [
 
         try {
             // Find the product using slug and website_name
-            const product = await Product.findOne({ slug, website_name });
+            const product = await Product.findOne({ slug});
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }

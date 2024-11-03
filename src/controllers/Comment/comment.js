@@ -6,6 +6,29 @@ const { Product } = require("../../models/Product");
 const createResponse = require("../../utils/createResponse");
 const { Comment } = require("../../models/Comment");
 
+exports.getCommentCountForProduct = [
+    // Validate that `slug` exists in the request parameters
+    check('slug')
+        .notEmpty()
+        .withMessage('Slug is required in body.'),
+    
+    // Handle validation errors using middleware
+    handleValidationErrors,
+
+    async (req, res) => {
+        const { slug } = req.body;
+
+        try {
+            // Count the comments for the product using the product_slug
+            const commentCount = await Comment.countDocuments({ product_slug: slug });
+
+            return res.status(200).json(createResponse("Comment count retrieved successfully.", "success", 200, { data: { count: commentCount } }));
+        } catch (error) {
+            return res.status(500).json(createResponse(error.message, "error", 500));
+        }
+    }
+];
+
 
 exports.getProductComments = [
     // Validate that `slug` exists in the request parameters
@@ -42,7 +65,7 @@ exports.getProductComments = [
                         createdAt: comment.createdAt,
                     }));
 
-            return res.status(200).json(createResponse("Comments retrieved successfully.", "success", 200, { data: { comments:formattedComments } }));
+            return res.status(200).json(createResponse("Comments retrieved successfully.", "success", 200, { data: { comments:formattedComments,count:comments.length } }));
         } catch (error) {
             return res.status(500).json(createResponse(error.message, "error", 500));
         }
@@ -236,7 +259,7 @@ exports.getCommentLikes = [
     
             
 
-            return res.status(200).json(createResponse("Likes retrieved successfully.", "success", 200, { data: { likes: likesData } }));
+            return res.status(200).json(createResponse("Likes retrieved successfully.", "success", 200, { data: { likes: likesData , count: comment.likes.length} }));
         } catch (error) {
             return res.status(500).json(createResponse(error.message, "error", 500));
         }
@@ -330,7 +353,7 @@ exports.getCommentDislikes = [
                 profile_image: user.profile_image
             }));
 
-            return res.status(200).json(createResponse("Dislikes retrieved successfully.", "success", 200, { data: { dislikes: dislikesData } }));
+            return res.status(200).json(createResponse("Dislikes retrieved successfully.", "success", 200, { data: { dislikes: dislikesData , count: comment.disLikes.length } }));
         } catch (error) {
             return res.status(500).json(createResponse(error.message, "error", 500));
         }
@@ -377,7 +400,7 @@ exports.getCommentReplies = [
                 createdAt: reply.createdAt,
             }));
 
-            return res.status(200).json(createResponse("Replies retrieved successfully.", "success", 200, { data: { replies: formattedReplies } }));
+            return res.status(200).json(createResponse("Replies retrieved successfully.", "success", 200, { data: { replies: formattedReplies , count: comment.replies.length} }));
         } catch (error) {
             return res.status(500).json(createResponse(error.message, "error", 500));
         }
@@ -610,7 +633,7 @@ exports.getReplyLikes = [
                 profile_image: user.profile_image
             }));
 
-            return res.status(200).json(createResponse("Likes retrieved successfully.", "success", 200, { data: { likes: likesData } }));
+            return res.status(200).json(createResponse("Likes retrieved successfully.", "success", 200, { data: { likes: likesData , count: reply.likes.length } }));
         } catch (error) {
             return res.status(500).json(createResponse(error.message, "error", 500));
         }
@@ -658,7 +681,7 @@ exports.getReplyDislikes = [
                 profile_image: user.profile_image
             }));
 
-            return res.status(200).json(createResponse("Dislikes retrieved successfully.", "success", 200, { data: { dislikes: disLikesData } }));
+            return res.status(200).json(createResponse("Dislikes retrieved successfully.", "success", 200, { data: { dislikes: disLikesData , count : reply.disLikes.length } }));
         } catch (error) {
             return res.status(500).json(createResponse(error.message, "error", 500));
         }

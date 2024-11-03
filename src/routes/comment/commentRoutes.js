@@ -3,6 +3,7 @@ const router = express.Router();
 const CommentController = require('../../controllers/Comment/comment');
 const authenticateToken = require("../../middlewares/authenticateToken");
 
+router.get("/count",authenticateToken, CommentController.getCommentCountForProduct);
 router.get("/",authenticateToken, CommentController.getProductComments);
 router.post("/",authenticateToken, CommentController.addComment);
 router.delete("/",authenticateToken, CommentController.deleteComment);

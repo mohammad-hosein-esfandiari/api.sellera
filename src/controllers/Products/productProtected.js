@@ -39,7 +39,7 @@ exports.addProduct = [
             const newProduct = new Product({
                 title,
                 slug, // Set the unique slug
-                website_id: req.website // Optionally allow website_name
+                website_id: req.website.id // Optionally allow website_name
             });
 
             await newProduct.save(); // Save the product to the database
@@ -65,8 +65,8 @@ exports.addProduct = [
 exports.deleteProduct = async (req, res) => {
     try {
         const { slug } = req.params;
-        const website_id = req.website;
-        console.log(website_id);
+        const website_id = req.website.id;
+        
 
         // Find and delete product by slug and website_id
         const deletedProduct = await Product.findOneAndDelete({ website_id, slug },{new:true});
@@ -94,15 +94,16 @@ exports.updateProductTitle = [
 
         try {
             const { slug  } = req.params;
-            const { title , domain_name} = req.body;
+            const { title } = req.body;
+            const website_id = req.website.id;
 
-            const product = await Product.findOneAndUpdate({slug, website_name:domain_name}, { title }, { new: true });
+            const product = await Product.findOneAndUpdate({slug, website_id}, { title }, { new: true });
 
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
 
-            return res.status(200).json(createResponse("Product title updated successfully.", "success", 200, { data: product }));
+            return res.status(200).json(createResponse("Product title updated successfully.", "success", 200, { data: {title : product.title} }));
         } catch (error) {
             return res.status(500).json(createResponse("Internal server error.", "error", 500));
         }
@@ -128,22 +129,19 @@ exports.updateProductCategory = [
         try {
             const { slug } = req.params; // Extract product slug from URL parameters
             const { category, domain_name } = req.body; // Extract category and domain_name from request body
+            const website_id = req.website.id;
+            const websiteCategories = req.website.categories
 
-            // Find the website by domain_name to get its categories
-            const website = await Website.findOne({ domain_name });
-            if (!website) {
-                return res.status(404).json(createResponse("Website not found.", "error", 404));
-            }
 
             // Check if the category of site is empty
-            if(!website.categories.length){
+            if(!websiteCategories.length){
                 return res.status(404).json(createResponse("Category of website is empty, plz add first.", "error", 404))
             }
 
             // Check if the provided category exists in the website's categories
-            if (!website.categories.includes(category)) {
+            if (!websiteCategories.includes(category)) {
                 return res.status(400).json(createResponse(
-                    `Invalid category. The category must be one of the website's predefined categories : [ ${website.categories.join(",")} ]`,
+                    `Invalid category. The category must be one of the website's predefined categories : [ ${websiteCategories.join(",")} ]`,
                     "error",
                     400,
                 ));
@@ -151,7 +149,7 @@ exports.updateProductCategory = [
 
             // Find the product based on slug and website domain name, and update its category
             const product = await Product.findOneAndUpdate(
-                { slug, website_name: domain_name }, // Search criteria
+                { slug, website_id }, // Search criteria
                 { category }, // Fields to update
                 { new: true } // Return the updated document
             );
@@ -170,7 +168,7 @@ exports.updateProductCategory = [
             ));
         } catch (error) {
             // Handle any internal server errors
-            return res.status(500).json(createResponse("Internal server error.", "error", 500));
+            return res.status(500).json(createResponse(error.message, "error", 500));
         }
     }
 ];
@@ -201,11 +199,12 @@ exports.updateProductPrice = [
         try {
             const { slug } = req.params;
             const { amount, currency, domain_name } = req.body;
+            const website_id = req.website.id;
 
 
 
             const product = await Product.findOneAndUpdate(
-                { slug, website_name: domain_name },  // Use domain_name from body
+                { slug, website_id },  // Use domain_name from body
                 { price:{amount,currency} },
                 { new: true }
             );
@@ -216,7 +215,6 @@ exports.updateProductPrice = [
 
             return res.status(200).json(createResponse("Product price updated successfully.", "success", 200, { data: {price:product.price} }));
         } catch (error) {
-            console.error("Error updating product price:", error);
             return res.status(500).json(createResponse("Internal server error.", "error", 500));
         }
     }
@@ -239,9 +237,10 @@ exports.toggleProductStatus = [
         try {
             const { slug } = req.params;
             const { domain_name} = req.body
+            const website_id = req.website.id;
 
             // Find product by slug and domain_name
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id });
 
             // If product does not exist, return a 404 response
             if (!product) {
@@ -298,10 +297,11 @@ exports.addBanner = [
         const { url, alt } = req.body;
         const { slug } = req.params; // Getting slug from URL parameters
         const { domain_name } = req.body; // Getting domain_name from request body
+        const website_id = req.website.id;
 
         try {
             const product = await Product.findOneAndUpdate(
-                { slug: slug, website_name: domain_name }, // Using both slug and domain_name to find the product
+                { slug, website_id }, // Using both slug and domain_name to find the product
                 { $push: { images: { url, alt: alt || "" } } }, // Adding new banner image to the array
                 { new: true }
             );
@@ -333,10 +333,11 @@ exports.deleteBannerById = [
         const { imageId } = req.body; // Getting the ID of the image to be deleted
         const { slug } = req.params; // Getting slug from URL parameters
         const { domain_name } = req.body; // Getting domain_name from the request body
+        const website_id = req.website.id;
 
         try {
             const product = await Product.findOneAndUpdate(
-                { slug: slug, website_name: domain_name }, // Using slug and domain_name to find the product
+                { slug, website_id }, // Using slug and domain_name to find the product
                 { $pull: { images: { _id: imageId } } }, // Removing the banner image by ID
                 { new: true }
             );
@@ -379,6 +380,7 @@ exports.updateBannerById = [
         const { imageId } = req.body; // Getting the ID of the image to be updated
         const { slug } = req.params; // Getting slug from URL parameters
         const { domain_name } = req.body; // Getting domain_name from the request body
+        const website_id = req.website.id;
 
         const updateData = {};
         if (req.body.url) updateData['images.$.url'] = req.body.url; // Update URL if provided
@@ -386,7 +388,7 @@ exports.updateBannerById = [
 
         try {
             const product = await Product.findOneAndUpdate(
-                { slug: slug, website_name: domain_name, 'images._id': imageId }, // Using slug, domain_name, and image ID to find the product
+                { slug: slug, website_id, 'images._id': imageId }, // Using slug, domain_name, and image ID to find the product
                 { $set: updateData }, // Updating the specified fields
                 { new: true }
             );
@@ -415,9 +417,10 @@ exports.updateImageOrder = [
 
         const { imageIds ,domain_name} = req.body; // Get the array of image IDs from body
         const { slug } = req.params; // Get product slug from URL parameters
+        const website_id = req.website.id;
 
         try {
-            const product = await Product.findOne({ slug ,website_name:domain_name});
+            const product = await Product.findOne({ slug ,website_id});
 
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
@@ -453,10 +456,11 @@ exports.updateStore = [
     async (req, res) => {
         const { store, domain_name } = req.body; // Store quantity and domain name from request body
         const { slug } = req.params; // Product slug from URL parameters
+        const website_id = req.website.id;
 
         try {
             // Find the product by slug and domain name
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id});
 
             // If the product is not found, return a 404 error
             if (!product) {
@@ -492,10 +496,11 @@ exports.updateColors = [
     async (req, res) => {
         const { colors, domain_name } = req.body; // Colors and domain name from request body
         const { slug } = req.params; // Product slug from URL parameters
+        const website_id = req.website.id;
 
         try {
             // Find the product by slug and domain name
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id});
 
             // If the product is not found, return a 404 error
             if (!product) {
@@ -535,10 +540,11 @@ exports.updateColors = [
     async (req, res) => {
         const { colors, domain_name } = req.body; // Colors and domain name from request body
         const { slug } = req.params; // Product slug from URL parameters
+        const website_id = req.website.id;
 
         try {
             // Find the product by slug and domain name
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id});
 
             // If the product is not found, return a 404 error
             if (!product) {
@@ -573,10 +579,11 @@ exports.updateIntroduction = [
     async (req, res) => {
         const { introduction, domain_name } = req.body; // Introduction and domain name from request body
         const { slug } = req.params; // Product slug from URL parameters
+        const website_id = req.website.id;
 
         try {
             // Find the product by slug and domain name
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id });
 
             // If the product is not found, return a 404 error
             if (!product) {
@@ -616,9 +623,10 @@ exports.addDetail = [
     async (req, res) => {
         const { base_title, items, domain_name } = req.body;
         const { slug } = req.params;
+        const website_id = req.website.id;
 
         try {
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id });
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
@@ -647,9 +655,10 @@ exports.updateDetail = [
         const { id } = req.params;
         const { base_title, items, domain_name } = req.body;
         const { slug } = req.params;
+        const website_id = req.website.id;
 
         try {
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id });
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
@@ -681,9 +690,10 @@ exports.deleteDetail = [
     async (req, res) => {
         const { domain_name } = req.body; // Get the domain name from the request body
         const { slug, id } = req.params; // Get product slug and detailId from route parameters
+        const website_id = req.website.id;
 
         try {
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id });
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
@@ -733,10 +743,11 @@ exports.updateSEO = [
     async (req, res) => {
         const { slug } = req.params;
         const { domain_name, metaTitle, metaDescription, keywords } = req.body;
+        const website_id = req.website.id;
 
         try {
             // Find the product by domain name and slug
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id });
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
@@ -781,10 +792,11 @@ exports.updateTags = [
     async (req, res) => {
         const { slug } = req.params;
         const { domain_name, tags } = req.body;
+        const website_id = req.website.id;
 
         try {
             // Find the product by domain name and slug
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id });
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
@@ -841,9 +853,10 @@ exports.addSpecialOffer = [
     async (req, res) => {
         const { slug } = req.params;
         const { domain_name, active, offerDescription, offerStartDate, offerEndDate, discount } = req.body;
+        const website_id = req.website.id;
 
         try {
-            const product = await Product.findOne({ slug, website_name: domain_name });
+            const product = await Product.findOne({ slug, website_id });
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
@@ -908,9 +921,10 @@ exports.addSpecialOffer = [
     async (req, res) => {
         const { slug } = req.params; // Get product slug from request parameters
         const { domain_name, active, offerDescription, offerStartDate, offerEndDate, discount } = req.body; // Destructure request body
+        const website_id = req.website.id;
 
         try {
-            const product = await Product.findOne({ slug, website_name: domain_name }); // Find product by slug and domain name
+            const product = await Product.findOne({ slug, website_id}); // Find product by slug and domain name
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404)); // Return error if product not found
             }
@@ -967,9 +981,10 @@ check("discount")
     async (req, res) => {
         const { slug, offerId } = req.params; // Get product slug and offer ID from request parameters
         const { domain_name, offerDescription, offerStartDate, offerEndDate, discount } = req.body; // Destructure request body
+        const website_id = req.website.id;
 
         try {
-            const product = await Product.findOne({ slug, website_name: domain_name }); // Find product by slug and domain name
+            const product = await Product.findOne({ slug, website_id }); // Find product by slug and domain name
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404)); // Return error if product not found
             }
@@ -999,9 +1014,10 @@ check("discount")
 exports.deleteSpecialOffer = async (req, res) => {
     const { slug, offerId } = req.params; // Get product slug and offer ID from request parameters
     const { domain_name } = req.body; // Get domain name from request body
+    const website_id = req.website.id;
 
     try {
-        const product = await Product.findOne({ slug, website_name: domain_name }); // Find product by slug and domain name
+        const product = await Product.findOne({ slug, website_id }); // Find product by slug and domain name
         if (!product) {
             return res.status(404).json(createResponse("Product not found.", "error", 404)); // Return error if product not found
         }
@@ -1013,7 +1029,7 @@ exports.deleteSpecialOffer = async (req, res) => {
         }
         // Remove the special offer using MongoDB's $pull operator
         const result = await Product.updateOne(
-            { slug, website_name: domain_name },
+            { slug, website_id },
             { $pull: { specialOffers: { _id: offerId } } } // Remove the special offer with the specified offerId
         );
 
@@ -1063,9 +1079,10 @@ exports.updateShipping = [
         try {
             const {slug} = req.params;
             const {  shipping , domain_name } = req.body;
+            const website_id = req.website.id;
 
             // Find the product by slug
-            const product = await Product.findOne({ slug,website_name:domain_name });
+            const product = await Product.findOne({ slug, website_id});
             if (!product) {
                 return res.status(404).json(createResponse("Product not found.", "error", 404));
             }
