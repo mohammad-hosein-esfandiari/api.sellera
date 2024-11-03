@@ -27,7 +27,10 @@ const login = async (req, res) => {
     // check use if login with this device
     const session = await Session.findOne({ userId: user._id, systemType: systemType });
 
-    if (session) {
+
+
+    
+    if (session && session.userId.toString() == user._id && session.systemType == systemType && session.maxAge.getTime() > new Date().getTime() ) {
       return res.status(403).json(createResponse("You are already logged in with this device .please login with another device.", "error", 403));
       }
 
@@ -70,17 +73,19 @@ const login = async (req, res) => {
 
     // Create user session
 
-    const newSession = new Session({
-
-        userId: user._id,
-        systemType,
+    await Session.findOneAndUpdate({userId:user._id , systemType}, {
         accessToken,
         refreshToken,
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      
-    });
+        maxAge:  new Date().getTime() +  7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+        userId: user._id,
+        systemType,
+        isLoggedIn:true
+        
+    },
+    { upsert: true }
+    
+  );
 
-    await newSession.save();
 
 
     // Delete any existing verification codes associated with the user's email
@@ -90,7 +95,8 @@ const login = async (req, res) => {
     res.status(200).json(createResponse("Login successful", "success", 200, { data: { accessToken } }));
   } catch (error) {
     // Handle server errors
-    res.status(500).json(responseMessages.serverError);
+    console.log(error.message);                                   
+    res.status(500).json(createResponse("Internal server error", "error", 500));
   }
 };
 

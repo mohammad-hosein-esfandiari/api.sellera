@@ -23,8 +23,8 @@ exports.addProduct = [
     handleValidationErrors,
     async (req, res) => {
         try {
-            const { title, domain_name } = req.body; // Get the title and domain_name from the request body
-            console.log(req.website);
+            const { title } = req.body; // Get the title and domain_name from the request body
+ 
             
             // Create a unique slug from the title
             const slug = await createUniqueSlug(title);
@@ -39,7 +39,7 @@ exports.addProduct = [
             const newProduct = new Product({
                 title,
                 slug, // Set the unique slug
-                website_name: domain_name // Optionally allow website_name
+                website_id: req.website // Optionally allow website_name
             });
 
             await newProduct.save(); // Save the product to the database
@@ -62,8 +62,24 @@ exports.addProduct = [
     }
 ];
 
+exports.deleteProduct = async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const website_id = req.website;
+        console.log(website_id);
 
+        // Find and delete product by slug and website_id
+        const deletedProduct = await Product.findOneAndDelete({ website_id, slug },{new:true});
 
+        if (!deletedProduct) {
+            return res.status(404).json(createResponse("Product not found.", "error", 404));
+        }
+
+        return res.status(200).json(createResponse("Product deleted successfully.", "success", 200));
+    } catch (error) {
+        return res.status(500).json(createResponse("Error deleting product: " + error.message, "error", 500));
+    }
+};
 
 // Update product title
 exports.updateProductTitle = [

@@ -45,7 +45,7 @@ const hasPermissions = (requiredPermissions) => {
         const isSupportOfWebsite = !!supportUser; // Boolean value to check if the user is a support
 
         // Check if the user has any of the required permissions
-        if(requiredPermissions.length){
+        if(requiredPermissions && requiredPermissions.length){
             const hasPermission = supportUser && requiredPermissions.some(permission =>
                 supportUser.permissions.includes(permission) // Check against support user's permissions
             );

@@ -8,6 +8,8 @@ const sessionSchema = new mongoose.Schema({
     systemType: { type: String, required: true},
     createdAt: { type: Date, required: true, default: Date.now },
     userBasket: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }], default: [] },
+    isLoggedIn: { type: Boolean, required: true, default: false },
+    user_preferences: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, { timestamps: true, versionKey: false });
 
 module.exports = mongoose.model("Session", sessionSchema);

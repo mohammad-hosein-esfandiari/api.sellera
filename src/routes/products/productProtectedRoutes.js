@@ -9,6 +9,12 @@ router.post(
   ProductProtectedController.addProduct
 );
 
+router.delete(
+  "/delete/:slug",
+  hasPermissions(["product"]),
+  ProductProtectedController.deleteProduct
+);
+
 router.patch(
   "/:slug/title",
   hasPermissions(["product"]),

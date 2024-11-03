@@ -1,4 +1,4 @@
-const { validationResult, check } = require("express-validator");
+const { validationResult, check, body } = require("express-validator");
 const createResponse = require("../../../utils/createResponse");
 const { Website } = require('../../../models/Website');
 const { sendVerificationEmail } = require("../../../utils/emailService");
@@ -7,6 +7,8 @@ const { User } = require("../../../models/User");
 const verifyCode = require("../../../utils/verifyCode");
 const { isValidEmail } = require("../../../utils/isValidEmail");
 const upload = require("../../../configs/uploadConfig");
+const { Product } = require("../../../models/Product");
+const { handleValidationErrors } = require("../../../middlewares/handleValidation");
 
 // Controller for creating a website
 exports.createWebsite = async (req, res) => {
@@ -229,6 +231,9 @@ exports.confirmDeleteWebsite = async (req, res) => {
     
     // Save the updated user
     await seller.save();
+
+    await Product.deleteMany({ website_id: website._id }); // Delete all products associated with the website
+
 
     // Delete the website
     await Website.deleteOne({ _id: website._id });
@@ -983,3 +988,52 @@ exports.addBannerWithImage = [
       }
   }
 ];
+
+
+
+// Update SEO fields for the website with validation
+exports.updateSeoSettings = [
+  body('domain_name').notEmpty().withMessage('Domain name is required.'),
+  body('seo').notEmpty().withMessage('Seo is required.'),
+    body('seo.meta_title').optional().isString().withMessage('Meta title must be a string.'),
+    body('seo.meta_description').optional().isString().withMessage('Meta description must be a string.'),
+    body('seo.meta_keywords').optional().isArray().withMessage('Meta keywords must be an array of strings.'),
+    body('seo.canonical_url').optional().isURL().withMessage('Canonical URL must be a valid URL.'),
+    body('seo.robots_meta')
+        .optional()
+        .isIn(['index, follow', 'noindex, follow', 'index, nofollow', 'noindex, nofollow'])
+        .withMessage('Invalid robots meta value.'),
+    body('seo.schema_markup').optional().isString().withMessage('Schema markup must be a string.'),
+  handleValidationErrors, // Apply validation rules
+  async (req, res) => {
+
+      try {
+          const { domain_name, seo } = req.body;
+
+          // Find the website by domain name
+          const website = await Website.findOne({ domain_name });
+          if (!website) {
+              return res.status(404).json(createResponse('Website not found.', 'error', 404));
+          }
+
+          // Filter out fields with undefined values in seo object
+          const filteredSeo = Object.keys(seo).reduce((acc, key) => {
+              if (seo[key] !== undefined) {
+                  acc[key] = seo[key];
+              }
+              return acc;
+          }, {});
+
+          // Update only defined fields in SEO settings
+          website.seo = { ...website.seo, ...filteredSeo };
+
+          // Save the updated website document
+          await website.save();
+
+          return res.status(200).json(createResponse('SEO settings updated successfully.', 'success', 200, {data:{ seo: website.seo} }));
+      } catch (error) {
+          return res.status(500).json(createResponse('Error updating SEO settings: ' + error.message, 'error', 500));
+      }
+  }
+];
+

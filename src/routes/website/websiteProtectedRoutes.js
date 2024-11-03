@@ -138,27 +138,33 @@ router.put(
 router.put(
   "/status",
   checkSubscription,
-  hasPermissions(["admin"]),
+  hasPermissions(),
   WebsiteProtectedController.changeWebsiteStatus
 );
 router.post(
   "/category",
   checkSubscription,
-  hasPermissions(["admin","product"]),
+  hasPermissions(["product"]),
   WebsiteProtectedController.addCategory
 );
 router.delete(
   "/category",
   checkSubscription,
-  hasPermissions(["admin","product"]),
+  hasPermissions(["product"]),
   WebsiteProtectedController.removeCategory
 );
 
 router.post(
   "/banner",
   checkSubscription,
-  hasPermissions(["admin","product"]),
+  hasPermissions(["product"]),
   WebsiteProtectedController.addBannerWithImage
+);
+router.put(
+  "/seo",
+  checkSubscription,
+  hasPermissions(["seo","product"]),
+  WebsiteProtectedController.updateSeoSettings
 );
 
 module.exports = router;
