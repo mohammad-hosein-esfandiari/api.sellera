@@ -7,6 +7,7 @@ const authenticateToken = require('../middlewares/authenticateToken');
 const WebsiteRoutes = require("./website/websiteRouter");
 const ProductProtectedRoutes = require("./products/productProtectedRoutes");
 const ProductRoutes = require("./products/productRoutes");
+const CommnetRoutes = require("./comment/commentRoutes");
 const UploadRoutes = require("./upload/uploadRouter");
 const { hasPermissions } = require('../middlewares/hasPermissions');
 const checkSubscription = require('../middlewares/checkSubscription');
@@ -28,6 +29,8 @@ router.use("/products/protected" ,checkSubscription ,authenticateToken , Product
 router.use("/products" , ProductRoutes)
 
 
+
+router.use("/comment" , CommnetRoutes)
 
 
 

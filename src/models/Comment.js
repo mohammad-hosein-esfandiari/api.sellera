@@ -10,7 +10,7 @@ const replySchema = new mongoose.Schema({
     content: {
         type: String,
         required: [true, 'Reply content is required.'],
-        minlength: [10, 'Reply content must be at least 10 characters long.'],
+        minlength: [1, 'Reply content must be at least 1 characters long.'],
         maxlength: [500, 'Reply content must be less than 500 characters.'] // Set a maximum length for reply content
     },
     likes: [{
@@ -38,7 +38,7 @@ const commentSchema = new mongoose.Schema({
     content: {
         type: String,
         required: [true, 'Comment content is required.'],
-        minlength: [1, 'Comment content must be at least 10 characters long.'],
+        minlength: [1, 'Comment content must be at least 1 characters long.'],
         maxlength: [1000, 'Comment content must be less than 1000 characters.'] // Set a maximum length for comment content
     },
     likes: [{
