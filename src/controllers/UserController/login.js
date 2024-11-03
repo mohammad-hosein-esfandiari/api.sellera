@@ -25,7 +25,7 @@ const login = async (req, res) => {
     }
 
     // check use if login with this device
-    const session = await Session.findOne({ "session.userId": user._id, "session.systemType": systemType });
+    const session = await Session.findOne({ userId: user._id, systemType: systemType });
 
     if (session) {
       return res.status(403).json(createResponse("You are already logged in with this device .please login with another device.", "error", 403));
@@ -69,11 +69,19 @@ const login = async (req, res) => {
     const refreshToken = createRefreshToken(user._id, user.roles);
 
     // Create user session
-    req.session.userId = user._id;
-    req.session.isLoggedIn = true;
-    req.session.systemType = systemType;
-    req.session.accessToken = accessToken;
-    req.session.refreshToken = refreshToken;
+
+    const newSession = new Session({
+
+        userId: user._id,
+        systemType,
+        accessToken,
+        refreshToken,
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+      
+    });
+
+    await newSession.save();
+
 
     // Delete any existing verification codes associated with the user's email
     await VerificationCode.deleteMany({ email: user.email });

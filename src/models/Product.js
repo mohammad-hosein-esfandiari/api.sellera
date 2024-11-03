@@ -62,7 +62,7 @@ const ratingSchema = new mongoose.Schema({
 
 // Define the main product schema
 const productSchema = new mongoose.Schema({
-    website_name: { type: String, ref: "Website" },
+    website_id: { type: mongoose.Schema.Types.ObjectId, ref: "Website" },
     title: {
         type: String,
         required: [true, 'Product title is required.'],

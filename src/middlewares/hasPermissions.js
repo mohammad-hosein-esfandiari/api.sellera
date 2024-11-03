@@ -19,12 +19,25 @@ const hasPermissions = (requiredPermissions) => {
         }
     // Check if user is the seller of the website
     if (userRoles.includes('seller') && website.seller_id.toString() === req.user.id) {
+        req.website = website._id;
         return next(); // Allow access for sellers
     }
+
+    // check user if are support of website
+    if (!userRoles.includes('support')){
+        return res.status(403).json(createResponse('You dont have support role ', 'error', 403));
+
+    }
+
+    const supportUser = website.supports_id.find((item) => item.user_id.toString() === req.user.id);
+    if (!supportUser) {
+        return res.status(403).json(createResponse('You are not a support for this website.', 'error', 403));
+    }
+
         
         // Check if user has admin permission from the supports array
-        const supportUser = website.supports_id.find((item) => item.user_id.toString() === req.user.id);
         if (supportUser && supportUser.permissions.includes('admin')) {
+            req.website = website._id;
             return next(); // Allow access for users with admin permission
         }
 
@@ -39,6 +52,7 @@ const hasPermissions = (requiredPermissions) => {
     
             // If user is a support and has permission, proceed
             if (userRoles.includes('support') && isSupportOfWebsite && hasPermission) {
+                req.website = website._id;
                 return next();
             }
         }

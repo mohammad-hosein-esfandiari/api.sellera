@@ -23,10 +23,9 @@ exports.addProduct = [
     handleValidationErrors,
     async (req, res) => {
         try {
-
-
             const { title, domain_name } = req.body; // Get the title and domain_name from the request body
-
+            console.log(req.website);
+            
             // Create a unique slug from the title
             const slug = await createUniqueSlug(title);
 
@@ -40,17 +39,29 @@ exports.addProduct = [
             const newProduct = new Product({
                 title,
                 slug, // Set the unique slug
-                website_name: domain_name, // Optionally allow website_name
+                website_name: domain_name // Optionally allow website_name
             });
 
             await newProduct.save(); // Save the product to the database
-            
-            return res.status(201).json(createResponse("Product added successfully.", "success", 201, { data: newProduct }));
+
+            // Get the count of likes without sending the likes array
+            const likeCount = newProduct.likes.length;
+
+            // Delete the likes array from the product object
+            newProduct.likes = undefined;
+
+            return res.status(201).json(createResponse("Product added successfully.", "success", 201, { 
+                data: {
+                    ...newProduct.toObject(),
+                    likeCount // Send only the count of likes
+                }
+            }));
         } catch (error) {
             return res.status(500).json(createResponse("Error adding product: " + error.message, "error", 500));
         }
     }
 ];
+
 
 
 

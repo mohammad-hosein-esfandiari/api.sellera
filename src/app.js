@@ -25,17 +25,17 @@ const store = new MongoDBStore({
 });
 
 // Configuring session middleware
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET, // Secret key for signing the session ID
-    resave: false, // Prevents resaving session if it hasn't changed
-    saveUninitialized: false, // Prevents saving new sessions that haven't been modified
-    store: store, // Store sessions in MongoDB
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24 * 7, // Cookie expiration time set to one day
-    },
-  })
-);
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET, // Secret key for signing the session ID
+//     resave: false, // Prevents resaving session if it hasn't changed
+//     saveUninitialized: false, // Prevents saving new sessions that haven't been modified
+//     store: store, // Store sessions in MongoDB
+//     cookie: {
+//       maxAge: 1000 * 60 * 60 * 24 * 7, // Cookie expiration time set to one day
+//     },
+//   })
+// );
 
 // CORS options configuration
 const corsOptions = {

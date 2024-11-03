@@ -20,7 +20,7 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 
 
-router.use("/website/protected",checkSubscription, authenticateToken , websiteProtectedRoutes )
+router.use("/website/protected", authenticateToken , websiteProtectedRoutes )
 router.use("/website",  WebsiteRoutes)
 
 

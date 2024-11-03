@@ -109,7 +109,7 @@ exports.updateDomainName = async (req, res) => {
 
     if (!website) {
       return res.status(404).send(
-        createResponse('Website not found.', 'error', 404)
+        createResponse('Website not found...', 'error', 404)
       );
     }
 

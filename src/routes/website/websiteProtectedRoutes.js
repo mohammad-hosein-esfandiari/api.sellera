@@ -6,6 +6,7 @@ const {
 } = require("../../controllers/Website/validations/createWebsiteValidation");
 const isOwnerOfWebsite = require("../../middlewares/isOwnerOfWebsite");
 const { hasPermissions } = require("../../middlewares/hasPermissions");
+const checkSubscription = require("../../middlewares/checkSubscription");
 const router = express.Router();
 
 router.post(
@@ -17,6 +18,7 @@ router.post(
 
 router.put(
   "/domain-name",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.updateDomainName
@@ -38,6 +40,7 @@ router.delete(
 
 router.post(
   "/request-website-transfer",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.requestWebsiteTransfer
@@ -45,6 +48,7 @@ router.post(
 
 router.put(
   "/confirm-website-transfer",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.confirmWebsiteTransfer
@@ -53,6 +57,7 @@ router.put(
 
 router.post(
   "/supports/add-request",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.requestAddSupport
@@ -60,6 +65,7 @@ router.post(
 
 router.post(
   "/supports/confirm-add",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.confirmRequestAddSupport
@@ -67,6 +73,7 @@ router.post(
 
 router.post(
   "/supports/add",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.addSupport
@@ -74,6 +81,7 @@ router.post(
 
 router.delete(
   "/supports/delete",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.addSupport
@@ -81,6 +89,7 @@ router.delete(
 
 router.put(
   "/supports/permissions",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.addSupportPermission
@@ -89,6 +98,7 @@ router.put(
 
 router.delete(
   "/supports/permissions",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.removeSupportPermission
@@ -110,6 +120,7 @@ router.get(
 
 router.delete(
   "/update-history",
+  checkSubscription,
   isSeller,
   isOwnerOfWebsite,
   WebsiteProtectedController.deleteUpdateHistory
@@ -120,27 +131,32 @@ router.delete(
 
 router.put(
   "/bio",
+  checkSubscription,
   hasPermissions(["admin"]),
   WebsiteProtectedController.updateBio
 );
 router.put(
   "/status",
+  checkSubscription,
   hasPermissions(["admin"]),
   WebsiteProtectedController.changeWebsiteStatus
 );
 router.post(
   "/category",
+  checkSubscription,
   hasPermissions(["admin","product"]),
   WebsiteProtectedController.addCategory
 );
 router.delete(
   "/category",
+  checkSubscription,
   hasPermissions(["admin","product"]),
   WebsiteProtectedController.removeCategory
 );
 
 router.post(
   "/banner",
+  checkSubscription,
   hasPermissions(["admin","product"]),
   WebsiteProtectedController.addBannerWithImage
 );

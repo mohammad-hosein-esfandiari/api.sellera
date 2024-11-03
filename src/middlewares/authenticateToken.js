@@ -10,24 +10,33 @@ const authenticateToken = async (req, res, next) => {
   if (!token) {
     return res.status(400).json(createResponse("Access Denied: No Token Provided", "error", 401));
   }
-
+  
   const session = await Session.findOne({
-    "session.accessToken": token,
-    "session.systemType": req.headers["user-agent"],
+    accessToken: token,
+     systemType: req.headers["user-agent"],
   });
 
   if (!session) {
     return res.status(403).json(createResponse("Token expired, Please log in again.", "error", 403));
   }
-
   try {
+    
+
+      if(session.maxAge){
+        const tokenAge = new Date().getTime() - session.createdAt.getTime();
+        if(tokenAge > session.maxAge){
+          return res.status(403).json(createResponse("Token expired, Please log in again.", "error", 403));
+        }
+      }
+      
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET); // Validate token
     req.user = decoded; // Store user information in req.user for later use
 
     return next(); // Proceed to the next middleware
   } catch (error) {
-    const sessionRefreshToken = session.session.refreshToken;
+
+    const sessionRefreshToken = session.refreshToken;
 
     try {
       // Verify the refresh token
@@ -40,18 +49,18 @@ const authenticateToken = async (req, res, next) => {
       // Update the session
       await Session.findOneAndUpdate(
         {
-          "session.accessToken": token,
-          "session.systemType": req.headers["user-agent"],
+          accessToken: token,
+          systemType: req.headers["user-agent"],
         },
-        { "session.accessToken": newAccessToken }
+        { accessToken: newAccessToken }
       );
 
       return next(); // Proceed to the next middleware
     } catch (err) {
       // Delete the session if refresh token verification fails
       await Session.findOneAndDelete({
-        "session.accessToken": token,
-        "session.systemType": req.headers["user-agent"],
+        accessToken: token,
+        systemType: req.headers["user-agent"],
       });
       return res.status(403).json(createResponse("Token expired, Please log in again!", "error", 402));
     }

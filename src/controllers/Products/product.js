@@ -240,3 +240,32 @@ exports.toggleLike = [
         }
     }
 ];
+
+
+exports.getProductLikesDetails = async (req, res) => {
+    try {
+        const { website, slug } = req.params;
+
+        // Find the product by slug and website name, and populate user details of those who liked the product
+        const product = await Product.findOne({ slug, website_name: website }).populate({
+            path: 'likes',
+            select: 'username profile_image' // Select only the username and profile_image fields from the User model
+        });
+
+        // If the product is not found, send a 404 response
+        if (!product) {
+            return res.status(404).json(createResponse("Product not found.", "error", 404));
+        }
+
+        // Return the details of users who liked the product
+        return res.status(200).json(createResponse(
+            "Product like details fetched successfully.",
+            "success",
+            200,
+            { likes: product.likes }
+        ));
+    } catch (error) {
+        // Send a 500 response if there's an error in fetching the like details
+        return res.status(500).json(createResponse("Error fetching like details: " + error.message, "error", 500));
+    }
+};

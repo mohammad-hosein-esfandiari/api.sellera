@@ -25,12 +25,12 @@ const replySchema = new mongoose.Schema({
 
 // Define the schema for comments
 const commentSchema = new mongoose.Schema({
-    product_id: {
-        type: mongoose.Schema.Types.ObjectId,
+    product_slug: {
+        type: String,
         ref: "Product",
         required: [true, 'Product ID is required for a comment.'] // Ensure product ID is provided
     },
-    user_id: {
+    user_info: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: [true, 'User ID is required for a comment.'] // Ensure user ID is provided
@@ -42,6 +42,10 @@ const commentSchema = new mongoose.Schema({
         maxlength: [1000, 'Comment content must be less than 1000 characters.'] // Set a maximum length for comment content
     },
     likes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }],
+    disLikes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }],
