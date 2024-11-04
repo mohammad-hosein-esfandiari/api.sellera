@@ -1,6 +1,7 @@
 const moment = require("moment");
 const { handleValidationErrors } = require("../../middlewares/handleValidation");
 const { Product } = require("../../models/Product");
+const { Comment } = require("../../models/Comment");
 const { Website } = require("../../models/Website");
 const createResponse = require("../../utils/createResponse");
 const createUniqueSlug = require("../../utils/createUniqueSlug");
@@ -74,6 +75,10 @@ exports.deleteProduct = async (req, res) => {
         if (!deletedProduct) {
             return res.status(404).json(createResponse("Product not found.", "error", 404));
         }
+
+        //  delete comments of this product
+         await Comment.deleteMany({ product_slug: slug });
+     
 
         return res.status(200).json(createResponse("Product deleted successfully.", "success", 200));
     } catch (error) {

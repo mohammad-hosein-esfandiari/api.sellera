@@ -9,6 +9,8 @@ const ProductProtectedRoutes = require("./products/productProtectedRoutes");
 const ProductRoutes = require("./products/productRoutes");
 const CommnetRoutes = require("./comment/commentRoutes");
 const UploadRoutes = require("./upload/uploadRouter");
+const TicketRoutes = require("./Ticket/ticketRouter");
+const TicketProtectedRoutes = require("./Ticket/ticketProtectedRouter");
 const { hasPermissions } = require('../middlewares/hasPermissions');
 const checkSubscription = require('../middlewares/checkSubscription');
 
@@ -32,6 +34,8 @@ router.use("/products" , ProductRoutes)
 
 router.use("/comment" , CommnetRoutes)
 
+router.use("/ticket" , authenticateToken , TicketRoutes)
+router.use("/ticket/protected" , authenticateToken, hasPermissions(["comment","order"]) , TicketProtectedRoutes)
 
 
 
