@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const ProductCOntroller = require('../../controllers/Products/product');
+const TicketProtectedController = require('../../controllers/Ticket/ticketProtected');
 const authenticateToken = require("../../middlewares/authenticateToken");
 
-router.get("/:website/:slug", ProductCOntroller.getProductBySlug );
+router.get("/", TicketProtectedController.getAllTicketForWebsite);
 
 
 module.exports = router;

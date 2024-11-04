@@ -52,6 +52,7 @@ const TicketSchema = new mongoose.Schema({
         enum: ['technical', 'financial', 'general', 'other'],
         default: 'general',
     },
+    website_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Website' },
 }, {
     timestamps: true, // Adds createdAt and updatedAt fields automatically
 });
