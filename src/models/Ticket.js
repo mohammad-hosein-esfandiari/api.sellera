@@ -40,6 +40,7 @@ const TicketSchema = new mongoose.Schema({
     comments: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         content: { type: String, trim: true },
+        isSupportAnswered : { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now },
     }],
     attachments: [{

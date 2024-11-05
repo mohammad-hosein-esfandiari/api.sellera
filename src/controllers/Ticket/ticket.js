@@ -60,7 +60,7 @@ exports.getAllTicketForOnePerson = [
 
     async (req, res) => {
         try {
-            const tickets = await Ticket.find({ createdBy: req.user.id  });
+            const tickets = await Ticket.find({ createdBy: req.user.id  }).populate('createdBy', 'username profile_image -_id').populate('website_id', 'logo_image domain_name').populate('comments.user','username profile_image -_id roles');
             if (!tickets) {
                 return res.status(404).json(createResponse("Tickets not found.", "error", 404));
             }
@@ -106,11 +106,43 @@ exports.getOneTicket = [
     async (req, res) => {
         const { id } = req.body;
         try {
-            const ticket = await Ticket.findById(id);
+            const ticket = await Ticket.findOne({_id:id , createdBy: req.user.id}).populate('createdBy', 'username profile_image -_id').populate('website_id', 'logo_image domain_name').populate('comments.user','username profile_image -_id roles');
             if (!ticket) {
                 return res.status(404).json(createResponse("Ticket not found.", "error", 404));
             }
             return res.status(200).json(createResponse("Ticket fetched successfully.", "success", 200, { data: { ticket } }));
+        } catch (error) {
+            return res.status(500).json(createResponse(error.message, "error", 500));
+        }
+    }
+]
+
+
+exports.addComment = [
+    // Validations
+    check('id').notEmpty().withMessage('Id is required.').isMongoId().withMessage('Invalid ticket id.'),
+    check('content').notEmpty().withMessage('Comment content is required.').trim(),
+
+    handleValidationErrors,
+    // Controller logic
+    async (req, res) => {
+        const { id, content } = req.body;
+        const userId = req.user.id;
+        try {
+            const ticket = await Ticket.findOne({_id:id , createdBy:userId});
+            if (!ticket) {
+                return res.status(404).json(createResponse("Ticket not found.", "error", 404));
+            }
+
+            if(ticket.comments[ticket.comments.length - 1] && !ticket.comments[ticket.comments.length - 1].isSupportAnswered){
+                return res.status(400).json(createResponse("Please wait for support to answer your comment.", "error", 400));                
+            }
+            
+
+            const comment = { user: userId, content, createdAt: new Date() };
+            ticket.comments.push(comment);
+            await ticket.save();    
+            return res.status(200).json(createResponse("Comment added successfully.", "success", 200, {data:{ comment }}));
         } catch (error) {
             return res.status(500).json(createResponse(error.message, "error", 500));
         }

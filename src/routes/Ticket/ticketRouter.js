@@ -32,4 +32,6 @@ router.put("/" , TicketController.updateTicket);
 
 router.get("/id" , TicketController.getOneTicket);
 
+router.post("/comment" , TicketController.addComment);
+
 module.exports = router;

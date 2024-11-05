@@ -61,7 +61,8 @@ const websiteSchema = new mongoose.Schema({
     supports_id: [{
         user_id: {
             type: mongoose.Schema.Types.ObjectId,
-            required: [true, 'User ID is required in supports.'] // Ensure user ID is provided
+            required: [true, 'User ID is required in supports.'],
+            ref: "User" // Ensure user ID is provided
         },
         permissions: {
             type: [{
