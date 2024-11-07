@@ -28,7 +28,7 @@ exports.addProduct = [
  
             
             // Create a unique slug from the title
-            const slug = await createUniqueSlug(title);
+            const slug = await createUniqueSlug("sp",Product);
 
             // Check for duplicate slug
             const existingProduct = await Product.findOne({ slug });
