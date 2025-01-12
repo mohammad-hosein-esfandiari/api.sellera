@@ -55,27 +55,16 @@
 // module.exports = app;
 
 
-const http = require('http');
+const express = require('express'); // وارد کردن Express
+const app = express(); // ساخت برنامه Express
+const PORT = 3000; // شماره پورت
 
-// پورت سرور
-const PORT = 3000;
-
-// سرور ایجاد کنید
-const server = http.createServer((req, res) => {
-  // بررسی نوع درخواست و مسیر
-  if (req.method === 'GET' && req.url === '/') {
-    // تنظیم هدر پاسخ
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    // ارسال پاسخ
-    res.end('سلام! به سرور Node.js خوش آمدید!');
-  } else {
-    // اگر مسیر نامعتبر باشد
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('صفحه پیدا نشد');
-  }
+// مسیر ریشه
+app.get('/', (req, res) => {
+  res.send('سلام! به سرور Express خوش آمدید!');
 });
 
 // راه‌اندازی سرور
-server.listen(PORT, () => {
-  console.log(`سرور در حال اجرا روی پورت ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`سرور در حال اجرا روی آدرس http://localhost:${PORT}`);
 });
