@@ -58,7 +58,7 @@ app.use(cors());
 app.use(express.json());
 
 // Defining routes for the API
-// app.use("/api", routes); // Mounting the routes under '/api'
+app.use("/api", routes); // Mounting the routes under '/api'
 
 // check jsonj content
 // app.use(jsonContentMiddleware);
@@ -70,14 +70,8 @@ app.use(checkBodySyntax);
 startSpecialOfferJob()
 
 // Defining a simple route for the root URL
-app.get("/", async (req, res) => {
-  try {
-    const products = await Product.find(); // Fetch all products from the database
-    res.json(products); // Send the products as JSON
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    res.status(500).json({ message: "Error fetching products" }); // Handle errors
-  }
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to the API!" }); // Sending a JSON response
 });
 
 // Exporting the app for use in other files (e.g., for starting the server)
