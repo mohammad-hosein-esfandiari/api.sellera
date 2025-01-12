@@ -16,9 +16,15 @@ const logout = async (req, res) => {
 
     // Attempt to delete the session from the database
     try {
-      await Session.findOneAndDelete({
-        'session.accessToken': token,
-        'session.systemType': req.headers['user-agent']
+      await Session.findOneAndUpdate({
+      accessToken: token,
+        systemType: req.headers['user-agent']
+      },{
+        $set: {
+          accessToken: null,
+          refreshToken: null,
+          isLoggedIn: false
+        }
       });
       // Session successfully deleted
     } catch (err) {
@@ -28,16 +34,16 @@ const logout = async (req, res) => {
 
  
 
-    // Destroy the session on the server-side
-    req.session.destroy((err) => {
-      if (err) {
-        // If an error occurs during session destruction, return an error response
-        return res.status(500).json(createResponse('Error logging out.', 'error', 500));
-      }
+    // // Destroy the session on the server-side
+    // req.session.destroy((err) => {
+    //   if (err) {
+    //     // If an error occurs during session destruction, return an error response
+    //     return res.status(500).json(createResponse('Error logging out.', 'error', 500));
+    //   }
 
-      // Successful response after logging out
-      return res.status(200).json(createResponse('Successfully logged out.', 'success', 200));
-    });
+    //   // Successful response after logging out
+    //   return res.status(200).json(createResponse('Successfully logged out.', 'success', 200));
+    // });
 
   } catch (error) {
     // Handle any server errors that occur during the logout process

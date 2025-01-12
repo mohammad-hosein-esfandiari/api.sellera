@@ -20,6 +20,7 @@ const baseUserSchema = new mongoose.Schema(
     first_name: { type: String },
     last_name: { type: String },
     email: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true },
     phone_number: { type: String, required: true },
     password: { type: String, required: true },
     loginAttempts: {

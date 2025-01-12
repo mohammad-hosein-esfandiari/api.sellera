@@ -6,6 +6,7 @@ const Session = require("../../models/Session");
 const { createToken, createRefreshToken } = require("../../utils/jwtTokenFunc");
 const VerificationCode = require("../../models/VerificationCode");
 const createResponse = require("../../utils/createResponse");
+const { sendVerificationEmail } = require("../../utils/emailService");
 require("dotenv").config();
 
 // Login function
@@ -23,10 +24,20 @@ const login = async (req, res) => {
       return res.status(401).json(createResponse("Invalid email or password.", "error", 401));
     }
 
+    // check use if login with this device
+    const session = await Session.findOne({ userId: user._id, systemType: systemType });
+
+
+
+    
+    if (session && session.userId.toString() == user._id && session.systemType == systemType && session.maxAge.getTime() > new Date().getTime() ) {
+      return res.status(403).json(createResponse("You are already logged in with this device .please login with another device.", "error", 403));
+      }
+
     // Check if the account is locked
     if (user.lockUntil && user.lockUntil > Date.now()) {
       const lockDuration = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));  // Remaining lock time in minutes
-      return res.status(403).json(createResponse(`Your account is locked. Try again in ${lockDuration} minutes.`, "error", 403));
+      return res.status(403).json(createResponse(`Your account is locked. Try again in ${lockDuration} minutes.`, "error", 408));
     }
 
     // Verify the password
@@ -38,8 +49,13 @@ const login = async (req, res) => {
       // Lock the account if max login attempts are exceeded
       if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
         user.lockUntil = Date.now() + LOCK_TIME;  // Lock the account for 1 hour
+                // Send verification email
+        const result = await sendVerificationEmail(email,"Unauthorized-entry");
+        if (!result.success) {
+          return res.status(400).json(createResponse(result.message,"error", 408));
+        }
         await user.save();
-        return res.status(403).json(createResponse("Too many failed login attempts. Your account is locked for 1 hour.", "error", 403));
+        return res.status(403).json(createResponse("Too many failed login attempts. Your account is locked for 1 hour.", "error", 408));
       }
 
       // Save the user with the updated loginAttempts
@@ -56,11 +72,21 @@ const login = async (req, res) => {
     const refreshToken = createRefreshToken(user._id, user.roles);
 
     // Create user session
-    req.session.userId = user._id;
-    req.session.isLoggedIn = true;
-    req.session.systemType = systemType;
-    req.session.accessToken = accessToken;
-    req.session.refreshToken = refreshToken;
+
+    await Session.findOneAndUpdate({userId:user._id , systemType}, {
+        accessToken,
+        refreshToken,
+        maxAge:  new Date().getTime() +  7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+        userId: user._id,
+        systemType,
+        isLoggedIn:true
+        
+    },
+    { upsert: true }
+    
+  );
+
+
 
     // Delete any existing verification codes associated with the user's email
     await VerificationCode.deleteMany({ email: user.email });
@@ -69,7 +95,8 @@ const login = async (req, res) => {
     res.status(200).json(createResponse("Login successful", "success", 200, { data: { accessToken } }));
   } catch (error) {
     // Handle server errors
-    res.status(500).json(responseMessages.serverError);
+    console.log(error.message);                                   
+    res.status(500).json(createResponse("Internal server error", "error", 500));
   }
 };
 

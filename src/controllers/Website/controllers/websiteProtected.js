@@ -1,4 +1,4 @@
-const { validationResult } = require("express-validator");
+const { validationResult, check, body } = require("express-validator");
 const createResponse = require("../../../utils/createResponse");
 const { Website } = require('../../../models/Website');
 const { sendVerificationEmail } = require("../../../utils/emailService");
@@ -6,6 +6,9 @@ const VerificationCode = require("../../../models/VerificationCode");
 const { User } = require("../../../models/User");
 const verifyCode = require("../../../utils/verifyCode");
 const { isValidEmail } = require("../../../utils/isValidEmail");
+const upload = require("../../../configs/uploadConfig");
+const { Product } = require("../../../models/Product");
+const { handleValidationErrors } = require("../../../middlewares/handleValidation");
 
 // Controller for creating a website
 exports.createWebsite = async (req, res) => {
@@ -32,9 +35,16 @@ exports.createWebsite = async (req, res) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send(
-        createResponse('Validation failed.', 'error', 400, { errors: errors.array() })
-      );
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
     }
 
     const seller = await User.findOne({_id:req.user.id}).select("website_id")
@@ -69,6 +79,7 @@ exports.createWebsite = async (req, res) => {
       bio: website.bio,
       isOnline: website.isOnline,
       createdAt: website.createdAt,
+      seo:website.seo
     };
 
     return res.status(200).send(
@@ -81,7 +92,6 @@ exports.createWebsite = async (req, res) => {
     );
   }
 };
-
 
 //  API for change domain name
 exports.updateDomainName = async (req, res) => {
@@ -101,7 +111,7 @@ exports.updateDomainName = async (req, res) => {
 
     if (!website) {
       return res.status(404).send(
-        createResponse('Website not found.', 'error', 404)
+        createResponse('Website not found...', 'error', 404)
       );
     }
 
@@ -134,11 +144,6 @@ exports.updateDomainName = async (req, res) => {
     );
   }
 };
-
-
-
-
-
 
 // API for sending delete request to email
 exports.requestDeleteWebsite = async (req, res) => {
@@ -176,8 +181,6 @@ exports.requestDeleteWebsite = async (req, res) => {
     );
   }
 };
-
-
 
 // API for confirming website deletion
 exports.confirmDeleteWebsite = async (req, res) => {
@@ -229,6 +232,9 @@ exports.confirmDeleteWebsite = async (req, res) => {
     // Save the updated user
     await seller.save();
 
+    await Product.deleteMany({ website_id: website._id }); // Delete all products associated with the website
+
+
     // Delete the website
     await Website.deleteOne({ _id: website._id });
 
@@ -246,11 +252,6 @@ exports.confirmDeleteWebsite = async (req, res) => {
     );
   }
 };
-
-
-
-
-
 
 exports.requestWebsiteTransfer = async (req, res) => {
   try {
@@ -270,11 +271,10 @@ exports.requestWebsiteTransfer = async (req, res) => {
   }
 };
 
-
 // API to confirm the transfer and change seller_id
 exports.confirmWebsiteTransfer = async (req, res) => {
   try {
-    const {  code, newEmail } = req.body; // Domain name, verification code, and new seller's email
+    const {  code, newEmail,domain_name } = req.body; // Domain name, verification code, and new seller's email
 
        // Find the new seller by email
        const newSeller = await User.findOne({ email: newEmail });
@@ -292,6 +292,7 @@ exports.confirmWebsiteTransfer = async (req, res) => {
      }
  
  
+     const website = await Website.findOne({ domain_name});
 
     // Update the seller_id in the website document
     website.seller_id = newSeller._id;
@@ -316,8 +317,14 @@ exports.changeWebsiteStatus = async (req,res)=>{
       return res.status(404).json(createResponse("Website not found.", "error", 404
       ));
       }
+
+      
       // Update the website status
-      website.isOnline ? website.isOnline = false : website.isOnline = true
+      if(website.isOnline){
+        website.isOnline = false
+      }else{
+        website.isOnline = true
+      }
       await website.save();
       
 
@@ -402,8 +409,6 @@ exports.updateBio = async (req, res) => {
   }
 };
 
-
-
 // Controller to handle request for adding support
 exports.requestAddSupport = async (req, res) => {
   try {
@@ -450,11 +455,10 @@ exports.requestAddSupport = async (req, res) => {
   }
 };
 
-
 // Controller to handle confirmation of the add support request
 exports.confirmRequestAddSupport = async (req, res) => {
   try {
-    const { code , support_email } = req.body;
+    const { code , support_email ,domain_name} = req.body;
 
     if (!code || !support_email) {
       return res.status(400).json(createResponse('Verification code and supports email are required.', 'error', 400));
@@ -498,13 +502,18 @@ exports.confirmRequestAddSupport = async (req, res) => {
   }
 };
 
-
-
-const validPermissions = ["admin", "product", "order", "comment"];
+const validPermissions = ["admin", "product", "order", "comment","seo"];
 
 exports.addSupport = async (req, res) => {
   try {
     const { support_email, permission , domain_name } = req.body;
+    
+    // Find user by email and check if user exists
+    const user = await User.findOne({ email: support_email });
+    if (!user) {
+      return res.status(404).json(createResponse('User not found.', 'error', 404));
+    }
+
 
     // Validate support_email is provided
     if (!support_email) {
@@ -519,12 +528,6 @@ exports.addSupport = async (req, res) => {
     // Validate permission is one of the allowed values
     if (!permission || !validPermissions.includes(permission)) {
       return res.status(400).json(createResponse('Invalid permission.', 'error', 400));
-    }
-
-    // Find user by email and check if user exists
-    const user = await User.findOne({ email: support_email });
-    if (!user) {
-      return res.status(404).json(createResponse('User not found.', 'error', 404));
     }
 
         // Check if user already has the support role in website
@@ -577,9 +580,6 @@ exports.addSupport = async (req, res) => {
     return res.status(500).json(createResponse('Error adding support, Try Again.', 'error', 500));
   }
 };
-
-
-
 
 
 exports.addSupportPermission = async (req, res) => {
@@ -645,8 +645,6 @@ exports.addSupportPermission = async (req, res) => {
     return res.status(500).json(createResponse('Error adding permission, try again.', 'error', 500));
   }
 };
-
-
 
 
 exports.removeSupportPermission = async (req, res) => {
@@ -833,4 +831,209 @@ exports.deleteUpdateHistory = async (req, res) => {
     return res.status(500).json(createResponse('Error deleting update history, try again.', 'error', 500));
   }
 };
+
+
+
+// Add category to website
+exports.addCategory = [
+  // Validate the category and domain_name
+  check('category')
+      .isString().withMessage('Category must be a string.')
+      .notEmpty().withMessage('Category cannot be empty.'),
+  
+  check('domain_name')
+      .isString().withMessage('Domain name must be a valid string.')
+      .notEmpty().withMessage('Domain name is required.'),
+
+  // Controller logic for adding a category
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+    }
+
+      try {
+          const { category, domain_name } = req.body;
+
+          // Find the website by domain_name
+          const website = await Website.findOne({ domain_name });
+          if (!website) {
+              return res.status(404).json(createResponse("Website not found.", "error", 404));
+          }
+
+          // Check if the category already exists
+          if (website.categories.includes(category)) {
+              return res.status(400).json(createResponse("Category already exists.", "error", 400));
+          }
+
+          // Add the new category
+          website.categories.push(category);
+          await website.save();
+
+          return res.status(200).json(createResponse(
+              "Category added successfully.",
+              "success",
+              200,
+              { data:{categories: website.categories} }
+          ));
+      } catch (error) {
+          return res.status(500).json(createResponse("Internal server error.", "error", 500));
+      }
+  }
+];
+
+
+
+// Remove category from website
+exports.removeCategory = [
+  // Validate the category and domain_name
+  check('category')
+      .isString().withMessage('Category must be a string.')
+      .notEmpty().withMessage('Category cannot be empty.'),
+
+  check('domain_name')
+      .isString().withMessage('Domain name must be a valid string.')
+      .notEmpty().withMessage('Domain name is required.'),
+
+  // Controller logic for removing a category
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const formattedErrors = errors.array().reduce((acc, error) => {
+            const { path, msg } = error;
+            if (!acc[path]) {
+                acc[path] = []; // Initialize an array for this field
+            }
+            acc[path].push(msg); // Add the message to the array
+            return acc;
+        }, {});
+
+        return res.status(400).json(createResponse("Validation failed.", "error", 400, { errors: formattedErrors }));
+    }
+
+      try {
+          const { category, domain_name } = req.body;
+
+          // Find the website by domain_name
+          const website = await Website.findOne({ domain_name });
+          if (!website) {
+              return res.status(404).json(createResponse("Website not found.", "error", 404));
+          }
+
+          // Check if the category exists
+          const categoryIndex = website.categories.indexOf(category);
+          if (categoryIndex === -1) {
+              return res.status(400).json(createResponse("Category not found.", "error", 400));
+          }
+
+          // Remove the category
+          website.categories.splice(categoryIndex, 1);
+          await website.save();
+
+          return res.status(200).json(createResponse(
+              "Category removed successfully.",
+              "success",
+              200,
+              { data : {categories: website.categories} }
+          ));
+      } catch (error) {
+          return res.status(500).json(createResponse("Internal server error.", "error", 500));
+      }
+  }
+];
+
+
+
+// API to upload banner image and add banner to website
+exports.addBannerWithImage = [
+  upload.single('image'), // Middleware to handle single file upload
+  async (req, res) => {
+      try {
+          const { domain_name, link } = req.body;
+
+          // Check if the file was uploaded
+          if (!req.file) {
+              return res.status(400).json(createResponse("No image file uploaded.", "error", 400));
+          }
+
+          const imageUrl = `/images/${req.file.filename}`; // The path to access the image
+
+          // Find website by domain_name
+          const website = await Website.findOne({ domain_name });
+          if (!website) {
+              return res.status(404).json(createResponse("Website not found.", "error", 404));
+          }
+
+          // Add new banner to the website's banners array
+          website.banners.push({ image: imageUrl, link });
+          await website.save();
+
+          return res.status(200).json(createResponse(
+              "Banner with image uploaded successfully.",
+              "success",
+              200,
+              { banners: website.banners }
+          ));
+      } catch (error) {
+          return res.status(500).json(createResponse("Internal server error.", "error", 500));
+      }
+  }
+];
+
+
+
+// Update SEO fields for the website with validation
+exports.updateSeoSettings = [
+  body('domain_name').notEmpty().withMessage('Domain name is required.'),
+  body('seo').notEmpty().withMessage('Seo is required.'),
+    body('seo.meta_title').optional().isString().withMessage('Meta title must be a string.'),
+    body('seo.meta_description').optional().isString().withMessage('Meta description must be a string.'),
+    body('seo.meta_keywords').optional().isArray().withMessage('Meta keywords must be an array of strings.'),
+    body('seo.canonical_url').optional().isURL().withMessage('Canonical URL must be a valid URL.'),
+    body('seo.robots_meta')
+        .optional()
+        .isIn(['index, follow', 'noindex, follow', 'index, nofollow', 'noindex, nofollow'])
+        .withMessage('Invalid robots meta value.'),
+    body('seo.schema_markup').optional().isString().withMessage('Schema markup must be a string.'),
+  handleValidationErrors, // Apply validation rules
+  async (req, res) => {
+
+      try {
+          const { domain_name, seo } = req.body;
+
+          // Find the website by domain name
+          const website = await Website.findOne({ domain_name });
+          if (!website) {
+              return res.status(404).json(createResponse('Website not found.', 'error', 404));
+          }
+
+          // Filter out fields with undefined values in seo object
+          const filteredSeo = Object.keys(seo).reduce((acc, key) => {
+              if (seo[key] !== undefined) {
+                  acc[key] = seo[key];
+              }
+              return acc;
+          }, {});
+
+          // Update only defined fields in SEO settings
+          website.seo = { ...website.seo, ...filteredSeo };
+
+          // Save the updated website document
+          await website.save();
+
+          return res.status(200).json(createResponse('SEO settings updated successfully.', 'success', 200, {data:{ seo: website.seo} }));
+      } catch (error) {
+          return res.status(500).json(createResponse('Error updating SEO settings: ' + error.message, 'error', 500));
+      }
+  }
+];
 

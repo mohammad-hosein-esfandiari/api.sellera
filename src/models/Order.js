@@ -1,59 +1,137 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const orderSchema = new mongoose.Schema({
-    user_id: {
+const OrderSchema = new mongoose.Schema({
+    orderNumber: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true
+    },
+    websiteId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: [true, 'User is required for the order.']
+        ref: 'Website',
+        required: true
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     products: [{
-        product_id: {
+        product_info: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Product",
-            required: [true, 'Product ID is required.']
+            ref: 'Product',
+            required: true
         },
         quantity: {
             type: Number,
-            required: [true, 'Quantity is required.'],
-            min: [1, 'Quantity cannot be less than 1.']
-        },
-        price: {
-            type: Number,
-            required: [true, 'Price is required.']
+            required: true,
+            min: 1
         }
     }],
+    discount_code:{
+        type:String,
+        trim:true
+
+    },
+    totalQuantity: {
+        type: Number,
+        
+    },
     totalAmount: {
         type: Number,
-        required: [true, 'Total amount is required.'],
-        min: [0, 'Total amount cannot be negative.']
+       
     },
-    orderStatus: {
+    paymentStatus: {
         type: String,
-        enum: ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'],
-        default: 'Pending'
-    },
-    deliveryAddress: {
-        city: { type: String, required: true },
-        postalCode: { type: String, required: true },
-        street: { type: String, required: true }
+        enum: ['pending', 'paid', 'failed', 'refunded'],
+        default: 'pending'
     },
     paymentMethod: {
         type: String,
-        enum: ['Credit Card', 'PayPal', 'Bank Transfer'],
-        required: [true, 'Payment method is required.']
+        enum: ['credit_card', 'paypal', 'bank_transfer', 'cash_on_delivery'],
+        required: true
     },
-    discountCode: {
-        type: String
+    orderStatus: {
+        type: String,
+        enum: ['processing', 'shipped', 'delivered', 'cancelled', 'returned'],
+        default: 'processing'
     },
-    trackingCode: {
-        type: String
+    shippingAddress: {
+        fullName: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        street: {
+            type: String,
+            required: true
+        },
+        city: {
+            type: String,
+            required: true
+        },
+        postalCode: {
+            type: String,
+            required: true
+        },
+        country: {
+            type: String,
+            required: true
+        },
+        phone: {
+            type: String,
+            required: true
+        }
     },
-    expiresAt: {
+    billingAddress: {
+        fullName: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        street: {
+            type: String,
+            required: true
+        },
+        city: {
+            type: String,
+            required: true
+        },
+        postalCode: {
+            type: String,
+            required: true
+        },
+        country: {
+            type: String,
+            required: true
+        },
+        phone: {
+            type: String,
+            required: true
+        }
+    },
+    trackingInfo: {
+        carrier: {
+            type: String,
+            trim: true
+        },
+        trackingNumber: {
+            type: String,
+            trim: true
+        },
+        estimatedDelivery: {
+            type: Date
+        }
+    },
+    createdAt: {
         type: Date,
-        default: () => Date.now() + 20*60*1000, // 20 دقیقه بعد
-    }
-}, { timestamps: true });
+        default: Date.now
+    },
+}, {
+    timestamps: true // Automatically adds createdAt and updatedAt fields
+});
 
-const Order = mongoose.model("Order", orderSchema);
+const Order = mongoose.model('Order', OrderSchema);
 
-module.exports = { Order };
+module.exports = {Order};
