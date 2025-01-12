@@ -7,6 +7,15 @@ const port = process.env.PORT || 3000; // Setting the port from environment vari
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+app.get('/',(req,res)=>{
+  console.log("Server is running on port "+port);
+
+
+  res.send('hi')
+
+
+})
+
 // Starting the server and listening for incoming requests on the specified port
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`); 
