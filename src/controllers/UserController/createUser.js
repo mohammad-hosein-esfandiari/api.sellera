@@ -4,8 +4,6 @@ const VerificationCode = require('../../models/VerificationCode');
 const createResponse = require('../../utils/createResponse');
 require('dotenv').config();
 
-
-
 const createUser = async (req, res) => {
   try {
     // Extract required information from request body
@@ -36,6 +34,16 @@ const createUser = async (req, res) => {
       return res.status(400).json(createResponse("Email is not verified", "error", 400));
     }
 
+    // Password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json(createResponse(
+        "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.",
+        "error",
+        400
+      ));
+    }
+
     // Hash the password
     const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10);
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -58,7 +66,6 @@ const createUser = async (req, res) => {
 
     // Create user according to the role
     const newUser = new User(newUserData);
-  
 
     // Save the user to the database
     await newUser.save();
