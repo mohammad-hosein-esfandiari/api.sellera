@@ -4,17 +4,21 @@ const VerificationCode = require('../../models/VerificationCode');
 const createResponse = require('../../utils/createResponse');
 require('dotenv').config();
 
-
-
 const createUser = async (req, res) => {
   try {
     // Extract required information from request body
-    const { email, password, first_name, last_name, phone_number } = req.body;
+    const { email, password, first_name, last_name, phone_number ,username } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json(createResponse("User already exists", "error", 400));
+    const existingUserEmail = await User.findOne({ email });
+    if (existingUserEmail) {
+      return res.status(400).json(createResponse("User already exists with this email", "error", 400));
     }
+    const existingUser_username = await User.findOne({ username });
+    if (existingUser_username) {
+      return res.status(400).json(createResponse("User already exists with this username", "error", 400));
+    }
+
+
 
     // Check user type from request header
     const userType = req.headers["user-type"];
@@ -36,6 +40,18 @@ const createUser = async (req, res) => {
       return res.status(400).json(createResponse("Email is not verified", "error", 400));
     }
 
+    
+
+    // Password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json(createResponse(
+        "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.",
+        "error",
+        400
+      ));
+    }
+
     // Hash the password
     const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10);
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -47,6 +63,7 @@ const createUser = async (req, res) => {
       first_name,
       last_name,
       phone_number,
+      username,
       isVerified: true, // Email verified
       roles: [userType],
     };
@@ -58,7 +75,6 @@ const createUser = async (req, res) => {
 
     // Create user according to the role
     const newUser = new User(newUserData);
-  
 
     // Save the user to the database
     await newUser.save();
