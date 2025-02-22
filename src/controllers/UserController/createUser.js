@@ -7,12 +7,18 @@ require('dotenv').config();
 const createUser = async (req, res) => {
   try {
     // Extract required information from request body
-    const { email, password, first_name, last_name, phone_number } = req.body;
+    const { email, password, first_name, last_name, phone_number ,username } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json(createResponse("User already exists", "error", 400));
+    const existingUserEmail = await User.findOne({ email });
+    if (existingUserEmail) {
+      return res.status(400).json(createResponse("User already exists with this email", "error", 400));
     }
+    const existingUser_username = await User.findOne({ username });
+    if (existingUser_username) {
+      return res.status(400).json(createResponse("User already exists with this username", "error", 400));
+    }
+
+
 
     // Check user type from request header
     const userType = req.headers["user-type"];
@@ -33,6 +39,8 @@ const createUser = async (req, res) => {
     if (!verificationEntry.isVerified) {
       return res.status(400).json(createResponse("Email is not verified", "error", 400));
     }
+
+    
 
     // Password validation
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -55,6 +63,7 @@ const createUser = async (req, res) => {
       first_name,
       last_name,
       phone_number,
+      username,
       isVerified: true, // Email verified
       roles: [userType],
     };
